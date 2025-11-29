@@ -92,6 +92,48 @@ class MusicService {
     }
   }
 
+  // Minimum duration for music files (30 seconds in milliseconds)
+  static const int _minDurationMs = 30000;
+
+  // Paths to exclude (system sounds, notifications, ringtones, alarms)
+  static const List<String> _excludedPaths = [
+    '/system/',
+    '/ringtones/',
+    '/ringtone/',
+    '/notifications/',
+    '/notification/',
+    '/alarms/',
+    '/alarm/',
+    '/ui/',
+    '/ogg/',
+    'sound_recorder',
+    '/sounds/',
+    'voice_recorder',
+    'call_rec',
+    '/recording/',
+    'whatsapp audio',
+    'telegram',
+  ];
+
+  // Check if a song should be excluded based on path
+  bool _shouldExcludeSong(SongModel song) {
+    final path = song.data.toLowerCase();
+
+    // Exclude if path contains any excluded keywords
+    for (final excluded in _excludedPaths) {
+      if (path.contains(excluded.toLowerCase())) {
+        return true;
+      }
+    }
+
+    // Exclude very short audio files (likely sound effects)
+    if (song.duration != null && song.duration! < _minDurationMs) {
+      return true;
+    }
+
+    return false;
+  }
+
   // Load all tracks from device
   Future<List<Track>> loadAllTracks({bool refresh = false}) async {
     try {
@@ -108,9 +150,18 @@ class MusicService {
         ignoreCase: true,
       );
 
-      print('Found ${songs.length} tracks');
+      print('Found ${songs.length} total audio files');
 
-      _allTracks = songs.map((song) => Track.fromSongModel(song)).toList();
+      // Filter out system sounds, notifications, ringtones, and short audio
+      final filteredSongs = songs
+          .where((song) => !_shouldExcludeSong(song))
+          .toList();
+
+      print('Filtered to ${filteredSongs.length} music tracks');
+
+      _allTracks = filteredSongs
+          .map((song) => Track.fromSongModel(song))
+          .toList();
 
       return _allTracks;
     } catch (e) {
@@ -134,7 +185,12 @@ class MusicService {
         orderType: OrderType.ASC_OR_SMALLER,
       );
 
-      return songs.map((song) => Track.fromSongModel(song)).toList();
+      // Filter out system sounds and short audio
+      final filteredSongs = songs
+          .where((song) => !_shouldExcludeSong(song))
+          .toList();
+
+      return filteredSongs.map((song) => Track.fromSongModel(song)).toList();
     } catch (e) {
       print('Error loading tracks by album: $e');
       return [];
@@ -151,7 +207,12 @@ class MusicService {
         orderType: OrderType.ASC_OR_SMALLER,
       );
 
-      return songs.map((song) => Track.fromSongModel(song)).toList();
+      // Filter out system sounds and short audio
+      final filteredSongs = songs
+          .where((song) => !_shouldExcludeSong(song))
+          .toList();
+
+      return filteredSongs.map((song) => Track.fromSongModel(song)).toList();
     } catch (e) {
       print('Error loading tracks by artist: $e');
       return [];
@@ -259,7 +320,12 @@ class MusicService {
         orderType: OrderType.ASC_OR_SMALLER,
       );
 
-      return songs.map((song) => Track.fromSongModel(song)).toList();
+      // Filter out system sounds and short audio
+      final filteredSongs = songs
+          .where((song) => !_shouldExcludeSong(song))
+          .toList();
+
+      return filteredSongs.map((song) => Track.fromSongModel(song)).toList();
     } catch (e) {
       print('Error loading tracks by genre: $e');
       return [];

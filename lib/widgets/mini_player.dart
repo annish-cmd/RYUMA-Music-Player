@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../models/track.dart';
 import '../services/audio_handler.dart';
+import '../services/theme_service.dart';
 import '../screens/now_playing_screen.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -23,20 +24,8 @@ class MiniPlayer extends StatelessWidget {
           child: Container(
             height: 72,
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [const Color(0xFF1A2F42), const Color(0xFF0D1B2A)],
-              ),
+            decoration: appTheme.getCardDecoration(
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Column(
               children: [
@@ -55,8 +44,8 @@ class MiniPlayer extends StatelessWidget {
 
                         return Container(
                           height: 3,
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.vertical(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.vertical(
                               top: Radius.circular(12),
                             ),
                           ),
@@ -66,9 +55,9 @@ class MiniPlayer extends StatelessWidget {
                             ),
                             child: LinearProgressIndicator(
                               value: progress.clamp(0.0, 1.0),
-                              backgroundColor: Colors.grey[800],
+                              backgroundColor: appTheme.textHintColor,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.blue[400]!,
+                                appTheme.progressColor,
                               ),
                               minHeight: 3,
                             ),
@@ -95,8 +84,8 @@ class MiniPlayer extends StatelessWidget {
                             children: [
                               Text(
                                 track.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: appTheme.textPrimaryColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -107,7 +96,7 @@ class MiniPlayer extends StatelessWidget {
                               Text(
                                 track.artist,
                                 style: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: appTheme.textSecondaryColor,
                                   fontSize: 12,
                                 ),
                                 maxLines: 1,
@@ -125,7 +114,7 @@ class MiniPlayer extends StatelessWidget {
                               onPressed: () => audioPlayer.skipToPrevious(),
                               icon: Icon(
                                 Icons.skip_previous_rounded,
-                                color: Colors.grey[300],
+                                color: appTheme.iconSecondaryColor,
                                 size: 28,
                               ),
                               padding: EdgeInsets.zero,
@@ -141,8 +130,17 @@ class MiniPlayer extends StatelessWidget {
                                   width: 42,
                                   height: 42,
                                   decoration: BoxDecoration(
-                                    color: Colors.blue[400],
+                                    gradient: LinearGradient(
+                                      colors: appTheme.primaryGradient,
+                                    ),
                                     shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: appTheme.shadowColor,
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
                                   child: IconButton(
                                     onPressed: () =>
@@ -165,7 +163,7 @@ class MiniPlayer extends StatelessWidget {
                               onPressed: () => audioPlayer.skipToNext(),
                               icon: Icon(
                                 Icons.skip_next_rounded,
-                                color: Colors.grey[300],
+                                color: appTheme.iconSecondaryColor,
                                 size: 28,
                               ),
                               padding: EdgeInsets.zero,
@@ -223,10 +221,10 @@ class MiniPlayer extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.grey[700]!, Colors.grey[900]!],
+          colors: [appTheme.surfaceColor, appTheme.cardColor],
         ),
       ),
-      child: Icon(Icons.music_note, color: Colors.grey[500], size: 24),
+      child: Icon(Icons.music_note, color: appTheme.textHintColor, size: 24),
     );
   }
 

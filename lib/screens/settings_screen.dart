@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
+import '../services/theme_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,8 +21,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const String _audioQualityKey = 'setting_audio_quality';
   static const String _showArtworkKey = 'setting_show_artwork';
   static const String _keepScreenOnKey = 'setting_keep_screen_on';
-  static const String _themeKey = 'setting_theme';
-  static const String _accentColorKey = 'setting_accent_color';
 
   // Settings values
   bool _autoPlay = true;
@@ -31,19 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _audioQuality = 'High';
   bool _showArtwork = true;
   bool _keepScreenOn = false;
-  String _theme = 'Dark';
-  int _accentColorIndex = 0;
-
-  final List<Color> _accentColors = [
-    Colors.redAccent,
-    Colors.blueAccent,
-    Colors.greenAccent,
-    Colors.purpleAccent,
-    Colors.orangeAccent,
-    Colors.tealAccent,
-    Colors.pinkAccent,
-    Colors.amberAccent,
-  ];
 
   @override
   void initState() {
@@ -61,8 +47,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _audioQuality = prefs.getString(_audioQualityKey) ?? 'High';
       _showArtwork = prefs.getBool(_showArtworkKey) ?? true;
       _keepScreenOn = prefs.getBool(_keepScreenOnKey) ?? false;
-      _theme = prefs.getString(_themeKey) ?? 'Dark';
-      _accentColorIndex = prefs.getInt(_accentColorKey) ?? 0;
     });
   }
 
@@ -80,18 +64,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1929),
+      backgroundColor: appTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A1929),
+        backgroundColor: appTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios, color: appTheme.iconColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
-            color: Colors.white,
+            color: appTheme.textPrimaryColor,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -190,17 +174,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildOptionTile(
             icon: Icons.color_lens,
-            title: 'Accent Color',
-            subtitle: 'Choose app accent color',
+            title: 'Colors',
+            subtitle: 'Choose app theme gradient',
             trailing: Container(
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: _accentColors[_accentColorIndex],
+                gradient: LinearGradient(colors: appTheme.primaryGradient),
                 shape: BoxShape.circle,
               ),
             ),
-            onTap: () => _showAccentColorDialog(),
+            onTap: () => _showColorsDialog(),
           ),
 
           const SizedBox(height: 16),
@@ -313,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          color: Colors.redAccent,
+          color: appTheme.primaryColor,
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
@@ -334,30 +318,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.grey[800]?.withValues(alpha: 0.5),
+          color: appTheme.surfaceColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: Colors.grey[400], size: 22),
+        child: Icon(icon, color: appTheme.iconSecondaryColor, size: 22),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 12),
       ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.redAccent,
-        activeTrackColor: Colors.redAccent.withValues(alpha: 0.5),
-        inactiveThumbColor: Colors.grey[600],
-        inactiveTrackColor: Colors.grey[800],
+        activeColor: appTheme.primaryColor,
+        activeTrackColor: appTheme.primaryColor.withValues(alpha: 0.5),
+        inactiveThumbColor: appTheme.textHintColor,
+        inactiveTrackColor: appTheme.surfaceColor,
       ),
     );
   }
@@ -383,10 +367,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[800]?.withValues(alpha: 0.5),
+                  color: appTheme.surfaceColor.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: Colors.grey[400], size: 22),
+                child: Icon(icon, color: appTheme.iconSecondaryColor, size: 22),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -395,15 +379,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: appTheme.textPrimaryColor,
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       subtitle,
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(
+                        color: appTheme.textSecondaryColor,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -412,10 +399,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: Colors.redAccent,
-              inactiveTrackColor: Colors.grey[800],
+              activeTrackColor: appTheme.primaryColor,
+              inactiveTrackColor: appTheme.surfaceColor,
               thumbColor: Colors.white,
-              overlayColor: Colors.redAccent.withValues(alpha: 0.2),
+              overlayColor: appTheme.primaryColor.withValues(alpha: 0.2),
               trackHeight: 4,
             ),
             child: Slider(
@@ -444,26 +431,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.grey[800]?.withValues(alpha: 0.5),
+          color: appTheme.surfaceColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: Colors.grey[400], size: 22),
+        child: Icon(icon, color: appTheme.iconSecondaryColor, size: 22),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 12),
       ),
       trailing:
           trailing ??
-          Icon(Icons.chevron_right, color: Colors.grey[600], size: 24),
+          Icon(Icons.chevron_right, color: appTheme.textHintColor, size: 24),
     );
   }
 
@@ -479,24 +466,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.grey[800]?.withValues(alpha: 0.5),
+          color: appTheme.surfaceColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: Colors.grey[400], size: 22),
+        child: Icon(icon, color: appTheme.iconSecondaryColor, size: 22),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 12),
       ),
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[600], size: 24),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: appTheme.textHintColor,
+        size: 24,
+      ),
     );
   }
 
@@ -512,7 +503,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.15),
+          color: appTheme.primaryColor.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: Colors.redAccent, size: 22),
@@ -613,10 +604,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showAccentColorDialog() {
+  void _showColorsDialog() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A2F42),
+      backgroundColor: appTheme.surfaceColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -634,56 +625,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Accent Color',
+            Text(
+              'Choose Theme',
               style: TextStyle(
-                color: Colors.white,
+                color: appTheme.textPrimaryColor,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Select a gradient theme for the app',
+              style: TextStyle(
+                color: appTheme.textSecondaryColor,
+                fontSize: 14,
+              ),
+            ),
             const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                alignment: WrapAlignment.center,
-                children: List.generate(_accentColors.length, (index) {
-                  final isSelected = _accentColorIndex == index;
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.85,
+                ),
+                itemCount: AppThemeType.values.length,
+                itemBuilder: (context, index) {
+                  final themeType = AppThemeType.values[index];
+                  final theme = AppThemeService.themes[themeType]!;
+                  final isSelected = appTheme.currentThemeType == themeType;
+
                   return GestureDetector(
-                    onTap: () {
-                      setState(() => _accentColorIndex = index);
-                      _saveSetting(_accentColorKey, index);
-                      Navigator.pop(context);
+                    onTap: () async {
+                      await appTheme.setTheme(themeType);
+                      setState(() {});
+                      if (mounted) Navigator.pop(context);
                     },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: _accentColors[index],
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(color: Colors.white, width: 3)
-                            : null,
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: _accentColors[index].withValues(
-                                    alpha: 0.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: theme.primaryGradient,
+                            ),
+                            shape: BoxShape.circle,
+                            border: isSelected
+                                ? Border.all(color: Colors.white, width: 3)
+                                : Border.all(
+                                    color: Colors.grey.withValues(alpha: 0.3),
+                                    width: 1,
                                   ),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white)
-                          : null,
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: theme.primaryColor.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 28,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          theme.name,
+                          style: TextStyle(
+                            color: isSelected
+                                ? appTheme.primaryColor
+                                : appTheme.textSecondaryColor,
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   );
-                }),
+                },
               ),
             ),
             const SizedBox(height: 32),
@@ -1006,8 +1044,8 @@ For any questions regarding these terms, please contact us.
     await prefs.remove(_audioQualityKey);
     await prefs.remove(_showArtworkKey);
     await prefs.remove(_keepScreenOnKey);
-    await prefs.remove(_themeKey);
-    await prefs.remove(_accentColorKey);
+    // Reset theme to default
+    await appTheme.setTheme(AppThemeType.red);
 
     await _loadSettings();
     _showSnackBar('Settings reset to defaults');

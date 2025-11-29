@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../models/track.dart';
+import '../services/theme_service.dart';
 
 class TrackListItem extends StatelessWidget {
   final Track track;
@@ -31,7 +32,7 @@ class TrackListItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isPlaying
-              ? Colors.white.withValues(alpha: 0.05)
+              ? appTheme.primaryColor.withValues(alpha: 0.1)
               : Colors.transparent,
         ),
         child: Row(
@@ -48,7 +49,9 @@ class TrackListItem extends StatelessWidget {
                   Text(
                     track.title,
                     style: TextStyle(
-                      color: isPlaying ? const Color(0xFFBB86FC) : Colors.white,
+                      color: isPlaying
+                          ? appTheme.primaryColor
+                          : appTheme.textPrimaryColor,
                       fontSize: 15,
                       fontWeight: FontWeight.w400,
                     ),
@@ -60,7 +63,7 @@ class TrackListItem extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.check_box_outline_blank,
-                        color: Colors.grey[600],
+                        color: appTheme.textHintColor,
                         size: 14,
                       ),
                       const SizedBox(width: 6),
@@ -68,7 +71,7 @@ class TrackListItem extends StatelessWidget {
                         child: Text(
                           '${track.artist} | ${track.album ?? "Unknown album"}',
                           style: TextStyle(
-                            color: Colors.grey[500],
+                            color: appTheme.textSecondaryColor,
                             fontSize: 12,
                             fontWeight: FontWeight.w300,
                           ),
@@ -86,7 +89,11 @@ class TrackListItem extends StatelessWidget {
               onTap: () => _showOptionsMenu(context),
               child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: Icon(Icons.more_vert, color: Colors.grey[600], size: 22),
+                child: Icon(
+                  Icons.more_vert,
+                  color: appTheme.textHintColor,
+                  size: 22,
+                ),
               ),
             ),
           ],
@@ -135,11 +142,11 @@ class TrackListItem extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.grey[800]!, Colors.grey[900]!],
+          colors: [appTheme.surfaceColor, appTheme.cardColor],
         ),
       ),
       child: Center(
-        child: Icon(Icons.music_note, color: Colors.grey[600], size: 24),
+        child: Icon(Icons.music_note, color: appTheme.textHintColor, size: 24),
       ),
     );
   }
@@ -147,7 +154,7 @@ class TrackListItem extends StatelessWidget {
   void _showOptionsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A2F42),
+      backgroundColor: appTheme.surfaceColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -161,7 +168,7 @@ class TrackListItem extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -179,8 +186,8 @@ class TrackListItem extends StatelessWidget {
                         children: [
                           Text(
                             track.title,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: appTheme.textPrimaryColor,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -191,7 +198,7 @@ class TrackListItem extends StatelessWidget {
                           Text(
                             track.artist,
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: appTheme.textSecondaryColor,
                               fontSize: 13,
                             ),
                             maxLines: 1,
@@ -204,7 +211,10 @@ class TrackListItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Divider(color: Colors.grey[800], height: 1),
+              Divider(
+                color: appTheme.textHintColor.withValues(alpha: 0.3),
+                height: 1,
+              ),
               // Options
               _buildOption(context, Icons.play_arrow_rounded, 'Play', () {
                 Navigator.pop(context);
@@ -218,7 +228,7 @@ class TrackListItem extends StatelessWidget {
                   Navigator.pop(context);
                   onFavoriteToggle?.call();
                 },
-                iconColor: isFavorite ? Colors.red : null,
+                iconColor: isFavorite ? appTheme.primaryColor : null,
               ),
               _buildOption(context, Icons.playlist_add, 'Add to Playlist', () {
                 Navigator.pop(context);
@@ -254,12 +264,16 @@ class TrackListItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: iconColor ?? Colors.grey[300], size: 24),
+            Icon(
+              icon,
+              color: iconColor ?? appTheme.iconSecondaryColor,
+              size: 24,
+            ),
             const SizedBox(width: 16),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: appTheme.textPrimaryColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
               ),
@@ -275,13 +289,13 @@ class TrackListItem extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1A2F42),
+          backgroundColor: appTheme.surfaceColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Text(
+          title: Text(
             'Track Information',
-            style: TextStyle(color: Colors.white, fontSize: 18),
+            style: TextStyle(color: appTheme.textPrimaryColor, fontSize: 18),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -302,9 +316,9 @@ class TrackListItem extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
+              child: Text(
                 'Close',
-                style: TextStyle(color: Color(0xFFBB86FC)),
+                style: TextStyle(color: appTheme.primaryColor),
               ),
             ),
           ],
@@ -324,7 +338,7 @@ class TrackListItem extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.grey[500],
+                color: appTheme.textSecondaryColor,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -333,7 +347,7 @@ class TrackListItem extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(color: appTheme.textPrimaryColor, fontSize: 13),
             ),
           ),
         ],

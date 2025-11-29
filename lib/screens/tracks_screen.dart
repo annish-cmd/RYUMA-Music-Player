@@ -9,6 +9,7 @@ import '../widgets/mini_player.dart';
 import '../widgets/alphabet_scrollbar.dart';
 import '../services/music_service.dart';
 import '../services/audio_handler.dart';
+import '../services/theme_service.dart';
 import '../main.dart';
 import 'settings_screen.dart';
 
@@ -452,12 +453,14 @@ class _TracksScreenState extends State<TracksScreen>
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: appTheme.brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A1929),
+        backgroundColor: appTheme.backgroundColor,
         body: SafeArea(
           child: Column(
             children: [
@@ -490,11 +493,7 @@ class _TracksScreenState extends State<TracksScreen>
         children: [
           ShaderMask(
             shaderCallback: (bounds) {
-              return const LinearGradient(
-                colors: [Color(0xFFFF1744), Color(0xFFFF5252), Colors.white],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ).createShader(bounds);
+              return appTheme.getTextGradientShader(bounds);
             },
             blendMode: BlendMode.srcIn,
             child: const Text(
@@ -513,14 +512,18 @@ class _TracksScreenState extends State<TracksScreen>
               _buildEqualizerIcon(),
               const SizedBox(width: 4),
               IconButton(
-                icon: Icon(Icons.search, color: Colors.grey[400], size: 26),
+                icon: Icon(
+                  Icons.search,
+                  color: appTheme.iconSecondaryColor,
+                  size: 26,
+                ),
                 onPressed: _showSearchDialog,
                 splashRadius: 22,
               ),
               IconButton(
                 icon: Icon(
                   Icons.settings_outlined,
-                  color: Colors.grey[400],
+                  color: appTheme.iconSecondaryColor,
                   size: 26,
                 ),
                 onPressed: () {
@@ -557,7 +560,9 @@ class _TracksScreenState extends State<TracksScreen>
                 height: isPlaying ? heights[index] : 8,
                 margin: const EdgeInsets.symmetric(horizontal: 1),
                 decoration: BoxDecoration(
-                  color: isPlaying ? Colors.redAccent : Colors.grey[600],
+                  color: isPlaying
+                      ? appTheme.primaryColor
+                      : appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               );
@@ -573,10 +578,10 @@ class _TracksScreenState extends State<TracksScreen>
       margin: const EdgeInsets.symmetric(horizontal: 8),
       child: TabBar(
         controller: _tabController,
-        indicatorColor: Colors.redAccent,
+        indicatorColor: appTheme.primaryColor,
         indicatorWeight: 2,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
+        labelColor: appTheme.textPrimaryColor,
+        unselectedLabelColor: appTheme.textHintColor,
         labelStyle: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
@@ -615,12 +620,16 @@ class _TracksScreenState extends State<TracksScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.music_note, color: Colors.grey[500], size: 18),
+              Icon(
+                Icons.music_note,
+                color: appTheme.textSecondaryColor,
+                size: 18,
+              ),
               const SizedBox(width: 6),
               Text(
                 '${_filteredTracks.length} Tracks',
                 style: TextStyle(
-                  color: Colors.grey[400],
+                  color: appTheme.textSecondaryColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -634,16 +643,23 @@ class _TracksScreenState extends State<TracksScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey[800]?.withValues(alpha: 0.5),
+                    color: appTheme.surfaceColor.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.sort, color: Colors.grey[500], size: 14),
+                      Icon(
+                        Icons.sort,
+                        color: appTheme.textSecondaryColor,
+                        size: 14,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         _getSortLabel(),
-                        style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                        style: TextStyle(
+                          color: appTheme.textSecondaryColor,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -667,7 +683,7 @@ class _TracksScreenState extends State<TracksScreen>
                   ),
                   decoration: BoxDecoration(
                     color: _isShuffleEnabled
-                        ? Colors.redAccent.withValues(alpha: 0.2)
+                        ? appTheme.primaryColor.withValues(alpha: 0.2)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -676,8 +692,8 @@ class _TracksScreenState extends State<TracksScreen>
                       Icon(
                         Icons.shuffle,
                         color: _isShuffleEnabled
-                            ? Colors.redAccent
-                            : Colors.grey[500],
+                            ? appTheme.primaryColor
+                            : appTheme.textSecondaryColor,
                         size: 18,
                       ),
                       const SizedBox(width: 4),
@@ -685,8 +701,8 @@ class _TracksScreenState extends State<TracksScreen>
                         'Shuffle',
                         style: TextStyle(
                           color: _isShuffleEnabled
-                              ? Colors.redAccent
-                              : Colors.grey[500],
+                              ? appTheme.primaryColor
+                              : appTheme.textSecondaryColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -701,13 +717,11 @@ class _TracksScreenState extends State<TracksScreen>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
-                    ),
+                    gradient: LinearGradient(colors: appTheme.primaryGradient),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.redAccent.withValues(alpha: 0.3),
+                        color: appTheme.shadowColor,
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -740,8 +754,8 @@ class _TracksScreenState extends State<TracksScreen>
         // Main track list
         RefreshIndicator(
           onRefresh: _refreshTracks,
-          color: const Color(0xFFBB86FC),
-          backgroundColor: const Color(0xFF1A2F42),
+          color: appTheme.primaryColor,
+          backgroundColor: appTheme.surfaceColor,
           child: ListView.builder(
             controller: _trackListScrollController,
             padding: const EdgeInsets.only(bottom: 20, right: 28),
@@ -776,8 +790,8 @@ class _TracksScreenState extends State<TracksScreen>
             onLetterSelected: _scrollToLetter,
             availableLetters: _availableLetters,
             currentLetter: _currentScrollLetter,
-            activeColor: const Color(0xFFBB86FC),
-            inactiveColor: Colors.grey[600],
+            activeColor: appTheme.primaryColor,
+            inactiveColor: appTheme.textHintColor,
           ),
         ),
       ],
@@ -803,7 +817,7 @@ class _TracksScreenState extends State<TracksScreen>
           Text(
             '${_playlists.length + 3} Playlists',
             style: TextStyle(
-              color: Colors.grey[400],
+              color: appTheme.textSecondaryColor,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -813,17 +827,17 @@ class _TracksScreenState extends State<TracksScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withValues(alpha: 0.2),
+                color: appTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.add, color: Colors.redAccent, size: 18),
-                  SizedBox(width: 4),
+                  Icon(Icons.add, color: appTheme.primaryColor, size: 18),
+                  const SizedBox(width: 4),
                   Text(
                     'Create',
                     style: TextStyle(
-                      color: Colors.redAccent,
+                      color: appTheme.primaryColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -842,14 +856,14 @@ class _TracksScreenState extends State<TracksScreen>
     final defaultPlaylists = [
       _buildDefaultPlaylistTile(
         icon: Icons.favorite,
-        iconColor: Colors.red,
+        iconColor: appTheme.primaryColor,
         title: 'Favorites',
         subtitle: 'Your liked songs',
         onTap: () => _openFavoritesPlaylist(),
       ),
       _buildDefaultPlaylistTile(
         icon: Icons.history,
-        iconColor: Colors.blue,
+        iconColor: appTheme.accentColor,
         title: 'Recently Played',
         subtitle: 'Your listening history',
         onTap: () => _openRecentlyPlayed(),
@@ -881,7 +895,7 @@ class _TracksScreenState extends State<TracksScreen>
             child: Text(
               'Your Playlists',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: appTheme.textSecondaryColor,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -914,17 +928,21 @@ class _TracksScreenState extends State<TracksScreen>
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 12),
       ),
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[600], size: 24),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: appTheme.textHintColor,
+        size: 24,
+      ),
     );
   }
 
@@ -948,21 +966,29 @@ class _TracksScreenState extends State<TracksScreen>
           ),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.music_note, color: Colors.white, size: 24),
+        child: Icon(
+          Icons.music_note,
+          color: appTheme.textPrimaryColor,
+          size: 24,
+        ),
       ),
       title: Text(
         playlist.name,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         '${playlist.trackIds.length} songs',
-        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 12),
       ),
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[600], size: 24),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: appTheme.textHintColor,
+        size: 24,
+      ),
     );
   }
 
@@ -997,7 +1023,7 @@ class _TracksScreenState extends State<TracksScreen>
       onTap: () => _openAlbum(album),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1A2F42),
+          color: appTheme.surfaceColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -1006,7 +1032,7 @@ class _TracksScreenState extends State<TracksScreen>
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D1F30),
+                  color: appTheme.cardColor,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(12),
                   ),
@@ -1022,11 +1048,11 @@ class _TracksScreenState extends State<TracksScreen>
                     artworkWidth: double.infinity,
                     artworkHeight: double.infinity,
                     nullArtworkWidget: Container(
-                      color: const Color(0xFF0D1F30),
+                      color: appTheme.cardColor,
                       child: Icon(
                         Icons.album,
                         size: 50,
-                        color: Colors.grey[700],
+                        color: appTheme.textHintColor,
                       ),
                     ),
                   ),
@@ -1042,8 +1068,8 @@ class _TracksScreenState extends State<TracksScreen>
                     album.album,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: appTheme.textPrimaryColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1051,7 +1077,10 @@ class _TracksScreenState extends State<TracksScreen>
                   const SizedBox(height: 2),
                   Text(
                     '${album.numOfSongs} songs',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                    style: TextStyle(
+                      color: appTheme.textSecondaryColor,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
@@ -1080,7 +1109,7 @@ class _TracksScreenState extends State<TracksScreen>
           child: Text(
             'Featured Artists',
             style: TextStyle(
-              color: Colors.grey[300],
+              color: appTheme.textPrimaryColor,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -1109,14 +1138,17 @@ class _TracksScreenState extends State<TracksScreen>
               Text(
                 'All Artists',
                 style: TextStyle(
-                  color: Colors.grey[300],
+                  color: appTheme.textPrimaryColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 '${_artists.length} artists',
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                style: TextStyle(
+                  color: appTheme.textSecondaryColor,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -1178,8 +1210,8 @@ class _TracksScreenState extends State<TracksScreen>
                       artist.artist.isNotEmpty
                           ? artist.artist[0].toUpperCase()
                           : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: appTheme.textPrimaryColor,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1194,8 +1226,8 @@ class _TracksScreenState extends State<TracksScreen>
               maxLines: 2,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: appTheme.textPrimaryColor,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -1226,8 +1258,8 @@ class _TracksScreenState extends State<TracksScreen>
         child: Center(
           child: Text(
             artist.artist.isNotEmpty ? artist.artist[0].toUpperCase() : '?',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: appTheme.textPrimaryColor,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -1236,17 +1268,21 @@ class _TracksScreenState extends State<TracksScreen>
       ),
       title: Text(
         artist.artist,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         '${artist.numberOfTracks} songs',
-        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 12),
       ),
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[600], size: 24),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: appTheme.textHintColor,
+        size: 24,
+      ),
     );
   }
 
@@ -1256,11 +1292,11 @@ class _TracksScreenState extends State<TracksScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 60, color: Colors.grey[700]),
+          Icon(icon, size: 60, color: appTheme.textHintColor),
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: TextStyle(color: appTheme.textSecondaryColor, fontSize: 14),
           ),
         ],
       ),
@@ -1286,7 +1322,7 @@ class _TracksScreenState extends State<TracksScreen>
   void _showSortOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A2F42),
+      backgroundColor: appTheme.surfaceColor,
       isScrollControlled: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1304,15 +1340,15 @@ class _TracksScreenState extends State<TracksScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Sort By',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: appTheme.textPrimaryColor,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1363,19 +1399,19 @@ class _TracksScreenState extends State<TracksScreen>
       },
       leading: Icon(
         icon,
-        color: isSelected ? Colors.redAccent : Colors.grey[500],
+        color: isSelected ? appTheme.primaryColor : appTheme.textSecondaryColor,
         size: 22,
       ),
       title: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.redAccent : Colors.white,
+          color: isSelected ? appTheme.primaryColor : appTheme.textPrimaryColor,
           fontSize: 15,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
       trailing: isSelected
-          ? const Icon(Icons.check, color: Colors.redAccent, size: 22)
+          ? Icon(Icons.check, color: appTheme.primaryColor, size: 22)
           : null,
     );
   }
@@ -1390,9 +1426,9 @@ class _TracksScreenState extends State<TracksScreen>
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A2F42),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: appTheme.surfaceColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -1403,20 +1439,26 @@ class _TracksScreenState extends State<TracksScreen>
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[600],
+                    color: appTheme.textHintColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
                   autofocus: true,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(
+                    color: appTheme.textPrimaryColor,
+                    fontSize: 16,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Search tracks, artists, albums...',
-                    hintStyle: TextStyle(color: Colors.grey[500]),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+                    hintStyle: TextStyle(color: appTheme.textSecondaryColor),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: appTheme.textSecondaryColor,
+                    ),
                     filled: true,
-                    fillColor: const Color(0xFF0A1929),
+                    fillColor: appTheme.backgroundColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -1435,14 +1477,14 @@ class _TracksScreenState extends State<TracksScreen>
                       },
                       child: Text(
                         'Clear',
-                        style: TextStyle(color: Colors.grey[500]),
+                        style: TextStyle(color: appTheme.textSecondaryColor),
                       ),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(
+                      child: Text(
                         'Done',
-                        style: TextStyle(color: Colors.redAccent),
+                        style: TextStyle(color: appTheme.primaryColor),
                       ),
                     ),
                   ],
@@ -1460,31 +1502,34 @@ class _TracksScreenState extends State<TracksScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2F42),
+        backgroundColor: appTheme.surfaceColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
+        title: Text(
           'Create Playlist',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: appTheme.textPrimaryColor),
         ),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: appTheme.textPrimaryColor),
           decoration: InputDecoration(
             hintText: 'Playlist name',
-            hintStyle: TextStyle(color: Colors.grey[500]),
+            hintStyle: TextStyle(color: appTheme.textSecondaryColor),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[600]!),
+              borderSide: BorderSide(color: appTheme.textHintColor),
             ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.redAccent),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: appTheme.primaryColor),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[500])),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: appTheme.textSecondaryColor),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -1503,16 +1548,16 @@ class _TracksScreenState extends State<TracksScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Added to "${newPlaylist.name}"'),
-                      backgroundColor: const Color(0xFF1A2F42),
+                      backgroundColor: appTheme.surfaceColor,
                       duration: const Duration(seconds: 2),
                     ),
                   );
                 }
               }
             },
-            child: const Text(
+            child: Text(
               'Create',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: appTheme.primaryColor),
             ),
           ),
         ],
@@ -1523,7 +1568,7 @@ class _TracksScreenState extends State<TracksScreen>
   void _showAddToPlaylistDialog(Track track) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A2F42),
+      backgroundColor: appTheme.surfaceColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1536,15 +1581,15 @@ class _TracksScreenState extends State<TracksScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: appTheme.textHintColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Add to Playlist',
               style: TextStyle(
-                color: Colors.white,
+                color: appTheme.textPrimaryColor,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1574,7 +1619,10 @@ class _TracksScreenState extends State<TracksScreen>
               },
             ),
             if (_playlists.isNotEmpty) ...[
-              Divider(color: Colors.grey[800], height: 1),
+              Divider(
+                color: appTheme.textHintColor.withValues(alpha: 0.3),
+                height: 1,
+              ),
               const SizedBox(height: 8),
               ConstrainedBox(
                 constraints: BoxConstraints(
@@ -1601,22 +1649,25 @@ class _TracksScreenState extends State<TracksScreen>
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.music_note,
-                          color: Colors.white,
+                          color: appTheme.textPrimaryColor,
                           size: 22,
                         ),
                       ),
                       title: Text(
                         playlist.name,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appTheme.textPrimaryColor,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       subtitle: Text(
                         '${playlist.trackIds.length} songs',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        style: TextStyle(
+                          color: appTheme.textSecondaryColor,
+                          fontSize: 12,
+                        ),
                       ),
                       trailing: alreadyAdded
                           ? const Icon(
@@ -1639,7 +1690,7 @@ class _TracksScreenState extends State<TracksScreen>
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Added to "${playlist.name}"'),
-                              backgroundColor: const Color(0xFF1A2F42),
+                              backgroundColor: appTheme.surfaceColor,
                               duration: const Duration(seconds: 2),
                             ),
                           );
@@ -1648,7 +1699,7 @@ class _TracksScreenState extends State<TracksScreen>
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Already in "${playlist.name}"'),
-                              backgroundColor: const Color(0xFF1A2F42),
+                              backgroundColor: appTheme.surfaceColor,
                               duration: const Duration(seconds: 2),
                             ),
                           );
@@ -1669,7 +1720,7 @@ class _TracksScreenState extends State<TracksScreen>
   void _showPlaylistOptions(PlaylistInfo playlist) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A2F42),
+      backgroundColor: appTheme.surfaceColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1682,16 +1733,16 @@ class _TracksScreenState extends State<TracksScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: appTheme.textHintColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.edit, color: Colors.white),
-              title: const Text(
+              leading: Icon(Icons.edit, color: appTheme.iconColor),
+              title: Text(
                 'Rename',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: appTheme.textPrimaryColor),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -1699,10 +1750,10 @@ class _TracksScreenState extends State<TracksScreen>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.redAccent),
-              title: const Text(
+              leading: Icon(Icons.delete, color: appTheme.primaryColor),
+              title: Text(
                 'Delete',
-                style: TextStyle(color: Colors.redAccent),
+                style: TextStyle(color: appTheme.primaryColor),
               ),
               onTap: () {
                 setState(() {
@@ -1724,30 +1775,33 @@ class _TracksScreenState extends State<TracksScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2F42),
+        backgroundColor: appTheme.surfaceColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
+        title: Text(
           'Rename Playlist',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: appTheme.textPrimaryColor),
         ),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: appTheme.textPrimaryColor),
           decoration: InputDecoration(
-            hintStyle: TextStyle(color: Colors.grey[500]),
+            hintStyle: TextStyle(color: appTheme.textSecondaryColor),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[600]!),
+              borderSide: BorderSide(color: appTheme.textHintColor),
             ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.redAccent),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: appTheme.primaryColor),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[500])),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: appTheme.textSecondaryColor),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -1766,9 +1820,9 @@ class _TracksScreenState extends State<TracksScreen>
                 Navigator.pop(context);
               }
             },
-            child: const Text(
+            child: Text(
               'Rename',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: appTheme.primaryColor),
             ),
           ),
         ],
@@ -1790,9 +1844,9 @@ class _TracksScreenState extends State<TracksScreen>
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF0A1929),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: appTheme.backgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -1801,7 +1855,7 @@ class _TracksScreenState extends State<TracksScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1814,7 +1868,7 @@ class _TracksScreenState extends State<TracksScreen>
                       height: 80,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: const Color(0xFF1A2F42),
+                        color: appTheme.surfaceColor,
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
@@ -1824,7 +1878,7 @@ class _TracksScreenState extends State<TracksScreen>
                           nullArtworkWidget: Icon(
                             Icons.album,
                             size: 40,
-                            color: Colors.grey[600],
+                            color: appTheme.textHintColor,
                           ),
                         ),
                       ),
@@ -1836,8 +1890,8 @@ class _TracksScreenState extends State<TracksScreen>
                         children: [
                           Text(
                             album.album,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: appTheme.textPrimaryColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1845,7 +1899,7 @@ class _TracksScreenState extends State<TracksScreen>
                           Text(
                             '${album.numOfSongs} songs',
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: appTheme.textSecondaryColor,
                               fontSize: 14,
                             ),
                           ),
@@ -1853,9 +1907,9 @@ class _TracksScreenState extends State<TracksScreen>
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.play_circle_fill,
-                        color: Colors.redAccent,
+                        color: appTheme.primaryColor,
                         size: 48,
                       ),
                       onPressed: () async {
@@ -1914,9 +1968,9 @@ class _TracksScreenState extends State<TracksScreen>
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF0A1929),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: appTheme.backgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -1925,7 +1979,7 @@ class _TracksScreenState extends State<TracksScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1964,11 +2018,12 @@ class _TracksScreenState extends State<TracksScreen>
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             artist.artist,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: appTheme.textPrimaryColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1976,7 +2031,7 @@ class _TracksScreenState extends State<TracksScreen>
                           Text(
                             '${artist.numberOfTracks} songs',
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: appTheme.textSecondaryColor,
                               fontSize: 14,
                             ),
                           ),
@@ -1984,9 +2039,9 @@ class _TracksScreenState extends State<TracksScreen>
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.play_circle_fill,
-                        color: Colors.redAccent,
+                        color: appTheme.primaryColor,
                         size: 48,
                       ),
                       onPressed: () async {
@@ -2023,10 +2078,12 @@ class _TracksScreenState extends State<TracksScreen>
     );
   }
 
-  void _openPlaylist(PlaylistInfo playlist) {
-    final tracks = _tracks
+  void _openPlaylist(PlaylistInfo playlist) async {
+    final playlistTracks = _tracks
         .where((t) => playlist.trackIds.contains(t.id))
         .toList();
+
+    if (!mounted) return;
 
     showModalBottomSheet(
       context: context,
@@ -2037,9 +2094,9 @@ class _TracksScreenState extends State<TracksScreen>
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF0A1929),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: appTheme.backgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -2048,7 +2105,7 @@ class _TracksScreenState extends State<TracksScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2070,44 +2127,45 @@ class _TracksScreenState extends State<TracksScreen>
                           ],
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.music_note,
-                        color: Colors.white,
-                        size: 36,
+                        color: appTheme.textPrimaryColor,
+                        size: 40,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             playlist.name,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: appTheme.textPrimaryColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${tracks.length} songs',
+                            '${playlistTracks.length} songs',
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: appTheme.textSecondaryColor,
                               fontSize: 14,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    if (tracks.isNotEmpty)
+                    if (playlistTracks.isNotEmpty)
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.play_circle_fill,
-                          color: Colors.redAccent,
+                          color: appTheme.primaryColor,
                           size: 48,
                         ),
                         onPressed: () async {
-                          await _audioPlayer.setPlaylist(tracks);
+                          await _audioPlayer.setPlaylist(playlistTracks);
                           await _audioPlayer.play();
                         },
                       ),
@@ -2115,23 +2173,23 @@ class _TracksScreenState extends State<TracksScreen>
                 ),
               ),
               Expanded(
-                child: tracks.isEmpty
+                child: playlistTracks.isEmpty
                     ? Center(
                         child: Text(
                           'No songs in this playlist',
-                          style: TextStyle(color: Colors.grey[500]),
+                          style: TextStyle(color: appTheme.textSecondaryColor),
                         ),
                       )
                     : ListView.builder(
                         controller: scrollController,
-                        itemCount: tracks.length,
+                        itemCount: playlistTracks.length,
                         itemBuilder: (context, index) {
-                          final track = tracks[index];
+                          final track = playlistTracks[index];
                           return TrackListItem(
                             track: track,
                             isPlaying: false,
                             onTap: () async {
-                              await _audioPlayer.setPlaylist(tracks);
+                              await _audioPlayer.setPlaylist(playlistTracks);
                               await _audioPlayer.playTrack(track);
                             },
                           );
@@ -2146,7 +2204,7 @@ class _TracksScreenState extends State<TracksScreen>
   }
 
   void _openFavoritesPlaylist() {
-    final favoriteTracks = _tracks
+    final favTracks = _tracks
         .where((t) => _favoriteIds.contains(t.id))
         .toList();
 
@@ -2170,7 +2228,7 @@ class _TracksScreenState extends State<TracksScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2182,12 +2240,12 @@ class _TracksScreenState extends State<TracksScreen>
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
+                        color: appTheme.primaryColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
-                        color: Colors.red.withValues(alpha: 0.2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.favorite,
-                        color: Colors.red,
+                        color: appTheme.primaryColor,
                         size: 40,
                       ),
                     ),
@@ -2195,34 +2253,35 @@ class _TracksScreenState extends State<TracksScreen>
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Favorites',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: appTheme.textPrimaryColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${favoriteTracks.length} songs',
+                            '${favTracks.length} songs',
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: appTheme.textSecondaryColor,
                               fontSize: 14,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    if (favoriteTracks.isNotEmpty)
+                    if (favTracks.isNotEmpty)
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.play_circle_fill,
-                          color: Colors.redAccent,
+                          color: appTheme.primaryColor,
                           size: 48,
                         ),
                         onPressed: () async {
-                          await _audioPlayer.setPlaylist(favoriteTracks);
+                          await _audioPlayer.setPlaylist(favTracks);
                           await _audioPlayer.play();
                         },
                       ),
@@ -2230,88 +2289,32 @@ class _TracksScreenState extends State<TracksScreen>
                 ),
               ),
               Expanded(
-                child: favoriteTracks.isEmpty
+                child: favTracks.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.favorite_border,
-                              size: 60,
-                              color: Colors.grey[700],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No favorites yet',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap the heart icon on any song to add it',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          'No favorite songs yet',
+                          style: TextStyle(color: appTheme.textSecondaryColor),
                         ),
                       )
                     : ListView.builder(
                         controller: scrollController,
-                        itemCount: favoriteTracks.length,
+                        itemCount: favTracks.length,
                         itemBuilder: (context, index) {
-                          final track = favoriteTracks[index];
-                          return ListTile(
+                          final track = favTracks[index];
+                          return TrackListItem(
+                            track: track,
+                            isPlaying: false,
+                            isFavorite: true,
                             onTap: () async {
-                              await _audioPlayer.setPlaylist(favoriteTracks);
+                              await _audioPlayer.setPlaylist(favTracks);
                               await _audioPlayer.playTrack(track);
-                              _addToRecentlyPlayed(track.id);
-                              _incrementPlayCount(track.id);
                             },
-                            leading: Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A2F42),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.music_note,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            title: Text(
-                              track.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                            ),
-                            subtitle: Text(
-                              track.artist,
-                              maxLines: 1,
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                              ),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.favorite,
-                                color: Colors.red,
-                                size: 22,
-                              ),
-                              onPressed: () {
-                                _toggleFavorite(track.id);
-                                Navigator.pop(context);
-                                _openFavoritesPlaylist();
-                              },
-                            ),
+                            onFavoriteToggle: () {
+                              setState(() {
+                                _favoriteIds.remove(track.id);
+                              });
+                              _saveFavorites();
+                            },
                           );
                         },
                       ),
@@ -2325,8 +2328,13 @@ class _TracksScreenState extends State<TracksScreen>
 
   void _openRecentlyPlayed() {
     final recentTracks = _recentlyPlayedIds
-        .map((id) => _tracks.where((t) => t.id == id).firstOrNull)
-        .whereType<Track>()
+        .map(
+          (id) => _tracks.firstWhere(
+            (t) => t.id == id,
+            orElse: () => _tracks.first,
+          ),
+        )
+        .where((t) => _tracks.contains(t))
         .toList();
 
     showModalBottomSheet(
@@ -2338,9 +2346,9 @@ class _TracksScreenState extends State<TracksScreen>
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF0A1929),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: appTheme.backgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -2349,7 +2357,7 @@ class _TracksScreenState extends State<TracksScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[600],
+                  color: appTheme.textHintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2361,12 +2369,12 @@ class _TracksScreenState extends State<TracksScreen>
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
+                        color: appTheme.accentColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
-                        color: Colors.blue.withValues(alpha: 0.2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.history,
-                        color: Colors.blue,
+                        color: appTheme.accentColor,
                         size: 40,
                       ),
                     ),
@@ -2374,11 +2382,12 @@ class _TracksScreenState extends State<TracksScreen>
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Recently Played',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: appTheme.textPrimaryColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -2386,7 +2395,7 @@ class _TracksScreenState extends State<TracksScreen>
                           Text(
                             '${recentTracks.length} songs',
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: appTheme.textSecondaryColor,
                               fontSize: 14,
                             ),
                           ),
@@ -2395,9 +2404,9 @@ class _TracksScreenState extends State<TracksScreen>
                     ),
                     if (recentTracks.isNotEmpty)
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.play_circle_fill,
-                          color: Colors.redAccent,
+                          color: appTheme.primaryColor,
                           size: 48,
                         ),
                         onPressed: () async {
@@ -2417,13 +2426,13 @@ class _TracksScreenState extends State<TracksScreen>
                             Icon(
                               Icons.history,
                               size: 60,
-                              color: Colors.grey[700],
+                              color: appTheme.textHintColor,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'No history yet',
                               style: TextStyle(
-                                color: Colors.grey[500],
+                                color: appTheme.textSecondaryColor,
                                 fontSize: 16,
                               ),
                             ),
@@ -2431,7 +2440,7 @@ class _TracksScreenState extends State<TracksScreen>
                             Text(
                               'Songs you play will appear here',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: appTheme.textHintColor,
                                 fontSize: 13,
                               ),
                             ),
@@ -2443,60 +2452,15 @@ class _TracksScreenState extends State<TracksScreen>
                         itemCount: recentTracks.length,
                         itemBuilder: (context, index) {
                           final track = recentTracks[index];
-                          return ListTile(
+                          return TrackListItem(
+                            track: track,
+                            isPlaying: false,
                             onTap: () async {
                               await _audioPlayer.setPlaylist(recentTracks);
                               await _audioPlayer.playTrack(track);
                               _addToRecentlyPlayed(track.id);
                               _incrementPlayCount(track.id);
                             },
-                            leading: Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A2F42),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              track.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                            ),
-                            subtitle: Text(
-                              track.artist,
-                              maxLines: 1,
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                              ),
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                _isFavorite(track.id)
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: _isFavorite(track.id)
-                                    ? Colors.red
-                                    : Colors.grey[600],
-                                size: 22,
-                              ),
-                              onPressed: () => _toggleFavorite(track.id),
-                            ),
                           );
                         },
                       ),

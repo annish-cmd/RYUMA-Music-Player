@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/track.dart';
 import '../services/audio_handler.dart';
+import '../services/theme_service.dart';
 
 class NowPlayingScreen extends StatefulWidget {
   final AudioPlayerHandler audioPlayer;
@@ -149,18 +150,20 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: appTheme.brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
       ),
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A2F42), Color(0xFF0A1929), Color(0xFF050D14)],
-              stops: [0.0, 0.5, 1.0],
+              colors: appTheme.screenGradient,
+              stops: const [0.0, 0.5, 1.0],
             ),
           ),
           child: SafeArea(
@@ -170,10 +173,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               builder: (context, snapshot) {
                 final track = snapshot.data ?? widget.audioPlayer.currentTrack;
                 if (track == null) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No track playing',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: appTheme.textPrimaryColor),
                     ),
                   );
                 }
@@ -223,14 +226,14 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
           IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
-            color: Colors.white,
+            color: appTheme.iconColor,
           ),
           Column(
             children: [
               Text(
                 'NOW PLAYING',
                 style: TextStyle(
-                  color: Colors.grey[500],
+                  color: appTheme.textSecondaryColor,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.5,
@@ -239,8 +242,8 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               const SizedBox(height: 2),
               Text(
                 track.album ?? 'Unknown Album',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: appTheme.textPrimaryColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -252,7 +255,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
           IconButton(
             onPressed: () => _showOptionsMenu(context, track),
             icon: const Icon(Icons.more_vert_rounded, size: 24),
-            color: Colors.white,
+            color: appTheme.iconColor,
           ),
         ],
       ),
@@ -280,7 +283,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               offset: const Offset(0, 15),
             ),
             BoxShadow(
-              color: Colors.redAccent.withValues(alpha: 0.2),
+              color: appTheme.primaryColor.withValues(alpha: 0.2),
               blurRadius: 40,
               spreadRadius: 5,
             ),
@@ -298,7 +301,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Colors.grey[900]!, Colors.grey[800]!],
+                  colors: [appTheme.cardColor, appTheme.surfaceColor],
                 ),
               ),
             ),
@@ -326,8 +329,8 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF0A1929),
-                border: Border.all(color: Colors.grey[700]!, width: 2),
+                color: appTheme.backgroundColor,
+                border: Border.all(color: appTheme.textHintColor, width: 2),
               ),
             ),
           ],
@@ -342,11 +345,11 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.grey[800]!, Colors.grey[900]!],
+          colors: [appTheme.surfaceColor, appTheme.cardColor],
         ),
       ),
       child: Center(
-        child: Icon(Icons.music_note, color: Colors.grey[600], size: 80),
+        child: Icon(Icons.music_note, color: appTheme.textHintColor, size: 80),
       ),
     );
   }
@@ -356,8 +359,8 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       children: [
         Text(
           track.title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appTheme.textPrimaryColor,
             fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
@@ -369,7 +372,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         Text(
           track.artist,
           style: TextStyle(
-            color: Colors.grey[400],
+            color: appTheme.textSecondaryColor,
             fontSize: 16,
             fontWeight: FontWeight.w400,
           ),
@@ -404,10 +407,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                     overlayShape: const RoundSliderOverlayShape(
                       overlayRadius: 14,
                     ),
-                    activeTrackColor: Colors.redAccent,
-                    inactiveTrackColor: Colors.grey[800],
+                    activeTrackColor: appTheme.progressColor,
+                    inactiveTrackColor: appTheme.textHintColor,
                     thumbColor: Colors.white,
-                    overlayColor: Colors.redAccent.withValues(alpha: 0.2),
+                    overlayColor: appTheme.primaryColor.withValues(alpha: 0.2),
                   ),
                   child: Slider(
                     value: progress.clamp(0.0, 1.0),
@@ -441,11 +444,17 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                               ? Duration(milliseconds: _dragValue.round())
                               : position,
                         ),
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        style: TextStyle(
+                          color: appTheme.textSecondaryColor,
+                          fontSize: 12,
+                        ),
                       ),
                       Text(
                         _formatDuration(duration),
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        style: TextStyle(
+                          color: appTheme.textSecondaryColor,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -471,7 +480,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               onPressed: () => widget.audioPlayer.toggleShuffle(),
               icon: Icon(
                 Icons.shuffle_rounded,
-                color: isShuffling ? Colors.redAccent : Colors.grey[500],
+                color: isShuffling
+                    ? appTheme.primaryColor
+                    : appTheme.textHintColor,
                 size: 24,
               ),
             );
@@ -481,9 +492,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         // Previous
         IconButton(
           onPressed: () => widget.audioPlayer.skipToPrevious(),
-          icon: const Icon(
+          icon: Icon(
             Icons.skip_previous_rounded,
-            color: Colors.white,
+            color: appTheme.iconColor,
             size: 40,
           ),
         ),
@@ -500,12 +511,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
-                  ),
+                  gradient: LinearGradient(colors: appTheme.primaryGradient),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.redAccent.withValues(alpha: 0.4),
+                      color: appTheme.shadowColor,
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -524,9 +533,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         // Next
         IconButton(
           onPressed: () => widget.audioPlayer.skipToNext(),
-          icon: const Icon(
+          icon: Icon(
             Icons.skip_next_rounded,
-            color: Colors.white,
+            color: appTheme.iconColor,
             size: 40,
           ),
         ),
@@ -541,15 +550,15 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
             switch (loopMode) {
               case LoopMode.off:
                 icon = Icons.repeat_rounded;
-                color = Colors.grey[500]!;
+                color = appTheme.textHintColor;
                 break;
               case LoopMode.all:
                 icon = Icons.repeat_rounded;
-                color = Colors.redAccent;
+                color = appTheme.primaryColor;
                 break;
               case LoopMode.one:
                 icon = Icons.repeat_one_rounded;
-                color = Colors.redAccent;
+                color = appTheme.primaryColor;
                 break;
             }
             return IconButton(
@@ -567,7 +576,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: appTheme.brightness == Brightness.dark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -614,14 +625,18 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         children: [
           Icon(
             icon,
-            color: isActive ? Colors.redAccent : Colors.grey[400],
+            color: isActive
+                ? appTheme.primaryColor
+                : appTheme.iconSecondaryColor,
             size: 24,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? Colors.redAccent : Colors.grey[500],
+              color: isActive
+                  ? appTheme.primaryColor
+                  : appTheme.textSecondaryColor,
               fontSize: 11,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
             ),

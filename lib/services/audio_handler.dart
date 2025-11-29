@@ -1,19 +1,18 @@
 import 'dart:async';
-import 'package:just_audio/just_audio.dart';
-import 'package:on_audio_query/on_audio_query.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/track.dart';
 
-class AudioPlayerHandler {
+class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayer _player = AudioPlayer();
-  final OnAudioQuery _audioQuery = OnAudioQuery();
 
   List<Track> _playlist = [];
   int _currentIndex = 0;
   bool _isShuffleEnabled = false;
 
-  // Stream controllers - using BehaviorSubject for currentTrack so new listeners get the current value
+  // Stream controllers for app-level state
   final _currentTrackController = BehaviorSubject<Track?>();
   final _playlistController = BehaviorSubject<List<Track>>.seeded([]);
   final _isShuffleController = BehaviorSubject<bool>.seeded(false);
@@ -28,7 +27,7 @@ class AudioPlayerHandler {
       : null;
   bool get isShuffleEnabled => _isShuffleEnabled;
 
-  // Streams
+  // Streams for UI
   Stream<Track?> get currentTrackStream => _currentTrackController.stream;
   Stream<List<Track>> get playlistStream => _playlistController.stream;
   Stream<bool> get isShuffleStream => _isShuffleController.stream;
@@ -40,12 +39,21 @@ class AudioPlayerHandler {
   bool get isPlaying => _player.playing;
   Duration get position => _player.position;
   Duration? get duration => _player.duration;
+  LoopMode get loopMode => _player.loopMode;
 
   AudioPlayerHandler() {
+    debugPrint('AudioPlayerHandler: Constructor called');
     _init();
   }
 
   Future<void> _init() async {
+    debugPrint('AudioPlayerHandler: _init() starting...');
+
+    // Broadcast playback state changes to system
+    _player.playbackEventStream.listen((event) {
+      _broadcastState();
+    });
+
     // Handle track completion
     _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
@@ -53,19 +61,95 @@ class AudioPlayerHandler {
       }
     });
 
-    // Listen for sequence state changes (for playlist navigation)
+    // Listen for current index changes
     _player.currentIndexStream.listen((index) {
-      if (index != null && index != _currentIndex && _playlist.isNotEmpty) {
+      if (index != null && _playlist.isNotEmpty && index < _playlist.length) {
         _currentIndex = index;
-        if (_currentIndex < _playlist.length) {
-          _currentTrackController.add(_playlist[_currentIndex]);
-        }
+        _currentTrackController.add(_playlist[_currentIndex]);
+        // Update media item for lock screen notification
+        mediaItem.add(_createMediaItem(_playlist[_currentIndex]));
+      }
+    });
+
+    // Listen for duration changes to update media item
+    _player.durationStream.listen((duration) {
+      final currentItem = mediaItem.value;
+      if (currentItem != null && duration != null) {
+        mediaItem.add(currentItem.copyWith(duration: duration));
       }
     });
   }
 
-  // Set playlist
+  /// Broadcast the current playback state to the system (for lock screen/notification)
+  void _broadcastState() {
+    debugPrint(
+      'AudioPlayerHandler: Broadcasting state - playing: ${_player.playing}, position: ${_player.position}',
+    );
+    playbackState.add(
+      PlaybackState(
+        controls: [
+          MediaControl.skipToPrevious,
+          if (_player.playing) MediaControl.pause else MediaControl.play,
+          MediaControl.skipToNext,
+        ],
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+        },
+        androidCompactActionIndices: const [0, 1, 2],
+        processingState: _getProcessingState(),
+        playing: _player.playing,
+        updatePosition: _player.position,
+        bufferedPosition: _player.bufferedPosition,
+        speed: _player.speed,
+        queueIndex: _currentIndex,
+      ),
+    );
+  }
+
+  AudioProcessingState _getProcessingState() {
+    switch (_player.processingState) {
+      case ProcessingState.idle:
+        return AudioProcessingState.idle;
+      case ProcessingState.loading:
+        return AudioProcessingState.loading;
+      case ProcessingState.buffering:
+        return AudioProcessingState.buffering;
+      case ProcessingState.ready:
+        return AudioProcessingState.ready;
+      case ProcessingState.completed:
+        return AudioProcessingState.completed;
+    }
+  }
+
+  /// Create MediaItem from Track for lock screen display
+  MediaItem _createMediaItem(Track track) {
+    debugPrint(
+      'AudioPlayerHandler: Creating MediaItem for "${track.title}" by ${track.artist}',
+    );
+    return MediaItem(
+      id: track.data ?? track.id.toString(),
+      title: track.title,
+      artist: track.artist,
+      album: track.album ?? 'Unknown Album',
+      duration: track.duration != null
+          ? Duration(milliseconds: track.duration!)
+          : null,
+      artUri: track.albumId != null
+          ? Uri.parse(
+              'content://media/external/audio/albumart/${track.albumId}',
+            )
+          : null,
+      extras: {'trackId': track.id},
+    );
+  }
+
+  /// Set playlist and start playback
   Future<void> setPlaylist(List<Track> tracks, {int initialIndex = 0}) async {
+    debugPrint(
+      'AudioPlayerHandler: setPlaylist() called with ${tracks.length} tracks',
+    );
     if (tracks.isEmpty) return;
 
     _playlist = List.from(tracks);
@@ -73,31 +157,68 @@ class AudioPlayerHandler {
     _playlistController.add(_playlist);
 
     // Create audio sources
-    final audioSources = tracks
-        .map((track) => _createAudioSource(track))
+    final audioSources = _playlist
+        .map((track) => AudioSource.file(track.data!, tag: track.id.toString()))
         .toList();
 
-    // Set the playlist
+    // Update the queue for audio_service
+    debugPrint(
+      'AudioPlayerHandler: Updating queue with ${tracks.length} items',
+    );
+    queue.add(tracks.map((t) => _createMediaItem(t)).toList());
+
+    // Set the audio source
     await _player.setAudioSource(
       ConcatenatingAudioSource(children: audioSources),
       initialIndex: initialIndex,
     );
 
-    _currentTrackController.add(_playlist[_currentIndex]);
+    // Update current track
+    final currentTrack = _playlist[_currentIndex];
+    debugPrint(
+      'AudioPlayerHandler: Setting current track: "${currentTrack.title}"',
+    );
+    _currentTrackController.add(currentTrack);
+
+    final item = _createMediaItem(currentTrack);
+    debugPrint('AudioPlayerHandler: Adding mediaItem to stream');
+    mediaItem.add(item);
+
+    _broadcastState();
+    debugPrint('AudioPlayerHandler: setPlaylist() completed');
   }
 
-  AudioSource _createAudioSource(Track track) {
-    return AudioSource.file(track.data!, tag: track.id.toString());
+  // BaseAudioHandler overrides for lock screen controls
+
+  @override
+  Future<void> play() async {
+    debugPrint('AudioPlayerHandler: play() called');
+    await _player.play();
+    _broadcastState();
+    debugPrint(
+      'AudioPlayerHandler: play() completed, isPlaying: ${_player.playing}',
+    );
   }
 
-  Future<void> play() => _player.play();
+  @override
+  Future<void> pause() async {
+    debugPrint('AudioPlayerHandler: pause() called');
+    await _player.pause();
+    _broadcastState();
+  }
 
-  Future<void> pause() => _player.pause();
+  @override
+  Future<void> stop() async {
+    await _player.stop();
+    await super.stop();
+  }
 
-  Future<void> stop() => _player.stop();
+  @override
+  Future<void> seek(Duration position) async {
+    await _player.seek(position);
+  }
 
-  Future<void> seek(Duration position) => _player.seek(position);
-
+  @override
   Future<void> skipToNext() async {
     if (_playlist.isEmpty) return;
 
@@ -121,6 +242,7 @@ class AudioPlayerHandler {
     }
   }
 
+  @override
   Future<void> skipToPrevious() async {
     if (_playlist.isEmpty) return;
 
@@ -149,13 +271,45 @@ class AudioPlayerHandler {
     }
   }
 
-  // Custom methods
+  @override
+  Future<void> skipToQueueItem(int index) async {
+    if (index < 0 || index >= _playlist.length) return;
+    await _player.seek(Duration.zero, index: index);
+  }
+
+  @override
+  Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
+    switch (repeatMode) {
+      case AudioServiceRepeatMode.none:
+        await _player.setLoopMode(LoopMode.off);
+        break;
+      case AudioServiceRepeatMode.one:
+        await _player.setLoopMode(LoopMode.one);
+        break;
+      case AudioServiceRepeatMode.all:
+      case AudioServiceRepeatMode.group:
+        await _player.setLoopMode(LoopMode.all);
+        break;
+    }
+  }
+
+  @override
+  Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
+    final enabled = shuffleMode == AudioServiceShuffleMode.all;
+    _isShuffleEnabled = enabled;
+    _isShuffleController.add(enabled);
+    await _player.setShuffleModeEnabled(enabled);
+  }
+
+  // App-level methods
+
   Future<void> playTrack(Track track) async {
     final index = _playlist.indexWhere((t) => t.id == track.id);
     if (index != -1) {
       _currentIndex = index;
       await _player.seek(Duration.zero, index: index);
       _currentTrackController.add(track);
+      mediaItem.add(_createMediaItem(track));
       await play();
     } else {
       await setPlaylist([track], initialIndex: 0);
@@ -168,6 +322,7 @@ class AudioPlayerHandler {
     _currentIndex = index;
     await _player.seek(Duration.zero, index: index);
     _currentTrackController.add(_playlist[_currentIndex]);
+    mediaItem.add(_createMediaItem(_playlist[_currentIndex]));
     await play();
   }
 
@@ -196,8 +351,6 @@ class AudioPlayerHandler {
         break;
     }
   }
-
-  LoopMode get loopMode => _player.loopMode;
 
   Future<void> togglePlayPause() async {
     if (_player.playing) {

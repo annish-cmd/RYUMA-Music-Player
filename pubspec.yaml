@@ -15,6 +15,9 @@ dependencies:
   # Audio playback
   just_audio: ^0.9.40
 
+  # Background audio and lock screen notification
+  audio_service: ^0.18.15
+
   # Music file access - using git version with namespace fix
   on_audio_query:
     git:
