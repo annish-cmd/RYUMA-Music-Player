@@ -6,13 +6,7 @@ A professional, modern music player application built with Flutter, featuring a 
 ![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## 📱 Screenshots
 
-<p align="center">
-  <img src="docs/screenshot_tracks.png" alt="Tracks Screen" width="250"/>
-  <img src="docs/screenshot_albums.png" alt="Albums Screen" width="250"/>
-  <img src="docs/screenshot_artists.png" alt="Artists Screen" width="250"/>
-</p>
 
 ## ✨ Features
 
@@ -167,13 +161,7 @@ minSdkVersion 21
 targetSdkVersion 34
 ```
 
-### iOS
 
-Minimum iOS version is 12.0. Update in `ios/Podfile` if needed:
-
-```ruby
-platform :ios, '12.0'
-```
 
 ## 🎨 Color Palette
 
@@ -227,33 +215,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Your Name**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-
-## 🙏 Acknowledgments
-
-- Inspired by modern music streaming applications
-- Icons from Material Design Icons
-- Flutter community for excellent documentation and support
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/yourusername/ani_music/issues) page
-2. Create a new issue if your problem isn't already listed
-3. Contact the maintainers
-
-## 🔄 Updates
-
-**Version 1.0.0** (Current)
-
-- Initial release
-- Basic UI implementation
-- Track listing functionality
-- Tab navigation
-- Shuffle mode toggle
-
----
-
-Made with ❤️ using Flutter
+- GitHub: [@annish-cmd](https://github.com/annish-cmd)
