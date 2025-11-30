@@ -6,9 +6,10 @@ A professional, modern music player application built with Flutter, featuring a 
 ![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+<img width="3464" height="1949" alt="RYUMA" src="https://github.com/user-attachments/assets/e32da859-cd1c-4285-a22b-1c88a9d0bb1b" />
 
 
-<img width="1202" height="674" alt="RYUMA" src="https://github.com/user-attachments/assets/a3f4f0a0-9f87-4006-89ac-e93660d6a9ee" />
+
 
 
 
