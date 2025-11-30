@@ -6,7 +6,7 @@ A professional, modern music player application built with Flutter, featuring a 
 ![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-
+<img width="3464" height="1949" alt="RYUMA" src="https://github.com/user-attachments/assets/e32da859-cd1c-4285-a22b-1c88a9d0bb1b" />
 
 ## ✨ Features
 
@@ -161,8 +161,6 @@ minSdkVersion 21
 targetSdkVersion 34
 ```
 
-
-
 ## 🎨 Color Palette
 
 | Color          | Hex Code  | Usage                |
@@ -212,7 +210,5 @@ Contributions are welcome! Please follow these steps:
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👨‍💻 Author
-
-**Your Name**
 
 - GitHub: [@annish-cmd](https://github.com/annish-cmd)
