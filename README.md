@@ -7,6 +7,9 @@ A professional, modern music player application built with Flutter, featuring a 
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 
+<img width="1920" height="1080" alt="RYUMA" src="https://github.com/user-attachments/assets/921aad22-3e1d-4ef4-8576-318cf4e1635a" />
+
+
 
 ## ✨ Features
 
