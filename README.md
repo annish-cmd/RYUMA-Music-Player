@@ -8,6 +8,8 @@ A professional, modern music player application built with Flutter, featuring a 
 
 <img width="3464" height="1949" alt="RYUMA" src="https://github.com/user-attachments/assets/e32da859-cd1c-4285-a22b-1c88a9d0bb1b" />
 
+<img width="3464" height="1949" alt="RYUMA" src="https://github.com/user-attachments/assets/e32da859-cd1c-4285-a22b-1c88a9d0bb1b" />
+
 ## ✨ Features
 
 - **Beautiful UI Design**: Dark-themed interface with gradient backgrounds and smooth animations
