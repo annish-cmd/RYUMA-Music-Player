@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:just_audio/just_audio.dart';
+
 import 'package:rxdart/rxdart.dart';
 import '../models/track.dart';
 
@@ -68,6 +70,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         _currentTrackController.add(_playlist[_currentIndex]);
         // Update media item for lock screen notification
         mediaItem.add(_createMediaItem(_playlist[_currentIndex]));
+        _broadcastState();
       }
     });
 
@@ -78,6 +81,11 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         mediaItem.add(currentItem.copyWith(duration: duration));
       }
     });
+
+    // Listen for position updates to broadcast state
+    _player.positionStream.listen((position) {
+      _broadcastState();
+    });
   }
 
   /// Broadcast the current playback state to the system (for lock screen/notification)
@@ -85,19 +93,42 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     debugPrint(
       'AudioPlayerHandler: Broadcasting state - playing: ${_player.playing}, position: ${_player.position}',
     );
+    
+    // Define controls based on playlist length and current position
+    final hasPrevious = _player.hasPrevious || (_currentIndex > 0);
+    final hasNext = _player.hasNext || (_currentIndex < _playlist.length - 1);
+    
+    final controls = <MediaControl>[];
+    
+    // Add previous button if available
+    if (hasPrevious) {
+      controls.add(MediaControl.skipToPrevious);
+    }
+    
+    // Add play/pause button based on current state
+    controls.add(
+      _player.playing ? MediaControl.pause : MediaControl.play,
+    );
+    
+    // Add next button if available
+    if (hasNext) {
+      controls.add(MediaControl.skipToNext);
+    }
+    
     playbackState.add(
       PlaybackState(
-        controls: [
-          MediaControl.skipToPrevious,
-          if (_player.playing) MediaControl.pause else MediaControl.play,
-          MediaControl.skipToNext,
-        ],
+        controls: controls,
         systemActions: const {
           MediaAction.seek,
           MediaAction.seekForward,
           MediaAction.seekBackward,
+          MediaAction.play,
+          MediaAction.pause,
+          MediaAction.stop,
+          MediaAction.skipToNext,
+          MediaAction.skipToPrevious,
         },
-        androidCompactActionIndices: const [0, 1, 2],
+        androidCompactActionIndices: controls.asMap().entries.take(3).map((e) => e.key).toList(),
         processingState: _getProcessingState(),
         playing: _player.playing,
         updatePosition: _player.position,
@@ -128,20 +159,38 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     debugPrint(
       'AudioPlayerHandler: Creating MediaItem for "${track.title}" by ${track.artist}',
     );
+    
+    Uri? artUri;
+    if (track.albumId != null) {
+      try {
+        artUri = Uri.parse(
+          'content://media/external/audio/albumart/${track.albumId}',
+        );
+      } catch (e) {
+        debugPrint('Error parsing artUri: $e');
+        artUri = null;
+      }
+    }
+    
     return MediaItem(
-      id: track.data ?? track.id.toString(),
+      id: track.id.toString(),
       title: track.title,
       artist: track.artist,
       album: track.album ?? 'Unknown Album',
       duration: track.duration != null
           ? Duration(milliseconds: track.duration!)
-          : null,
-      artUri: track.albumId != null
-          ? Uri.parse(
-              'content://media/external/audio/albumart/${track.albumId}',
-            )
-          : null,
-      extras: {'trackId': track.id},
+          : Duration.zero,
+      artUri: artUri,
+      genre: 'Music',
+      displayTitle: track.title,
+      displaySubtitle: track.artist,
+      displayDescription: track.album ?? 'Unknown Album',
+      extras: {
+        'trackId': track.id,
+        'albumId': track.albumId,
+        'artist': track.artist,
+        'album': track.album,
+      },
     );
   }
 
@@ -152,9 +201,14 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     );
     if (tracks.isEmpty) return;
 
-    _playlist = List.from(tracks);
+    // Use immutable assignment
+    _playlist = List.unmodifiable(tracks);
     _currentIndex = initialIndex.clamp(0, tracks.length - 1);
-    _playlistController.add(_playlist);
+    
+    // Update playlist controller asynchronously to avoid blocking
+    scheduleMicrotask(() {
+      _playlistController.add(_playlist);
+    });
 
     // Create audio sources
     final audioSources = _playlist
@@ -165,7 +219,12 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     debugPrint(
       'AudioPlayerHandler: Updating queue with ${tracks.length} items',
     );
-    queue.add(tracks.map((t) => _createMediaItem(t)).toList());
+    
+    // Update queue asynchronously
+    final mediaItems = tracks.map((t) => _createMediaItem(t)).toList();
+    scheduleMicrotask(() {
+      queue.add(mediaItems);
+    });
 
     // Set the audio source
     await _player.setAudioSource(
@@ -178,11 +237,19 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     debugPrint(
       'AudioPlayerHandler: Setting current track: "${currentTrack.title}"',
     );
-    _currentTrackController.add(currentTrack);
+    
+    // Update current track controller asynchronously
+    scheduleMicrotask(() {
+      _currentTrackController.add(currentTrack);
+    });
 
     final item = _createMediaItem(currentTrack);
     debugPrint('AudioPlayerHandler: Adding mediaItem to stream');
-    mediaItem.add(item);
+    
+    // Update media item asynchronously
+    scheduleMicrotask(() {
+      mediaItem.add(item);
+    });
 
     _broadcastState();
     debugPrint('AudioPlayerHandler: setPlaylist() completed');
@@ -194,6 +261,13 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> play() async {
     debugPrint('AudioPlayerHandler: play() called');
     await _player.play();
+    
+    // Update media item when playing
+    if (currentTrack != null) {
+      final item = _createMediaItem(currentTrack!);
+      mediaItem.add(item);
+    }
+    
     _broadcastState();
     debugPrint(
       'AudioPlayerHandler: play() completed, isPlaying: ${_player.playing}',
@@ -204,6 +278,13 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> pause() async {
     debugPrint('AudioPlayerHandler: pause() called');
     await _player.pause();
+    
+    // Update media item when pausing
+    if (currentTrack != null) {
+      final item = _createMediaItem(currentTrack!);
+      mediaItem.add(item);
+    }
+    
     _broadcastState();
   }
 
@@ -279,18 +360,23 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
+    LoopMode loopMode;
     switch (repeatMode) {
       case AudioServiceRepeatMode.none:
-        await _player.setLoopMode(LoopMode.off);
+        loopMode = LoopMode.off;
         break;
       case AudioServiceRepeatMode.one:
-        await _player.setLoopMode(LoopMode.one);
+        loopMode = LoopMode.one;
         break;
       case AudioServiceRepeatMode.all:
       case AudioServiceRepeatMode.group:
-        await _player.setLoopMode(LoopMode.all);
+        loopMode = LoopMode.all;
         break;
+      default:
+        loopMode = LoopMode.off;
     }
+    await _player.setLoopMode(loopMode);
+    _broadcastState();
   }
 
   @override
@@ -299,6 +385,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     _isShuffleEnabled = enabled;
     _isShuffleController.add(enabled);
     await _player.setShuffleModeEnabled(enabled);
+    _broadcastState();
   }
 
   // App-level methods
@@ -308,8 +395,13 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     if (index != -1) {
       _currentIndex = index;
       await _player.seek(Duration.zero, index: index);
-      _currentTrackController.add(track);
-      mediaItem.add(_createMediaItem(track));
+      
+      // Update track info asynchronously
+      scheduleMicrotask(() {
+        _currentTrackController.add(track);
+        mediaItem.add(_createMediaItem(track));
+      });
+      
       await play();
     } else {
       await setPlaylist([track], initialIndex: 0);
@@ -321,8 +413,14 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     if (index < 0 || index >= _playlist.length) return;
     _currentIndex = index;
     await _player.seek(Duration.zero, index: index);
-    _currentTrackController.add(_playlist[_currentIndex]);
-    mediaItem.add(_createMediaItem(_playlist[_currentIndex]));
+    
+    final currentTrack = _playlist[_currentIndex];
+    // Update track info asynchronously
+    scheduleMicrotask(() {
+      _currentTrackController.add(currentTrack);
+      mediaItem.add(_createMediaItem(currentTrack));
+    });
+    
     await play();
   }
 
@@ -391,5 +489,12 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     await _currentTrackController.close();
     await _playlistController.close();
     await _isShuffleController.close();
+  }
+
+  // Method to ensure the audio service stays active
+  void ensureActive() {
+    if (_player.playing) {
+      _broadcastState();
+    }
   }
 }

@@ -10,6 +10,7 @@ class MusicService {
   final OnAudioQuery _audioQuery = OnAudioQuery();
 
   List<Track> _allTracks = [];
+  DateTime? _lastLoadTime;
   bool _isInitialized = false;
 
   // Getters
@@ -137,8 +138,12 @@ class MusicService {
   // Load all tracks from device
   Future<List<Track>> loadAllTracks({bool refresh = false}) async {
     try {
-      if (_allTracks.isNotEmpty && !refresh) {
-        return _allTracks;
+      // Check if we have cached tracks and it's been less than 30 seconds since last load
+      if (_allTracks.isNotEmpty && !refresh && _lastLoadTime != null) {
+        final timeDiff = DateTime.now().difference(_lastLoadTime!);
+        if (timeDiff.inSeconds < 30) {
+          return _allTracks;
+        }
       }
 
       print('Loading all tracks from device...');
@@ -163,6 +168,7 @@ class MusicService {
           .map((song) => Track.fromSongModel(song))
           .toList();
 
+      _lastLoadTime = DateTime.now();
       return _allTracks;
     } catch (e) {
       print('Error loading tracks: $e');
@@ -173,6 +179,11 @@ class MusicService {
   // Reload tracks from device
   Future<List<Track>> refreshTracks() async {
     return await loadAllTracks(refresh: true);
+  }
+
+  // Clear the cache timestamp to force reload
+  void clearCacheTimestamp() {
+    _lastLoadTime = null;
   }
 
   // Get tracks by album

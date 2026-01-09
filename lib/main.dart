@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
+
 import 'package:permission_handler/permission_handler.dart';
 
 import 'screens/tracks_screen.dart';
@@ -34,6 +36,9 @@ Future<void> main() async {
 
   // Request notification permission for Android 13+
   await _requestNotificationPermission();
+
+  // Initialize audio session for proper audio focus handling
+  await _initAudioSession();
 
   // Initialize audio handler with audio service for lock screen notification
   await _initAudioService();
@@ -68,6 +73,30 @@ Future<void> _requestNotificationPermission() async {
   }
 }
 
+/// Initialize AudioSession for proper audio focus handling
+Future<void> _initAudioSession() async {
+  debugPrint('Initializing AudioSession...');
+  try {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playback,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.none,
+      avAudioSessionMode: AVAudioSessionMode.defaultMode,
+      avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.music,
+        usage: AndroidAudioUsage.media,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    ));
+    debugPrint('AudioSession configured successfully');
+  } catch (e) {
+    debugPrint('Error configuring AudioSession: $e');
+  }
+}
+
 /// Initialize AudioService for background playback and lock screen notification
 Future<void> _initAudioService() async {
   debugPrint('Initializing AudioService...');
@@ -78,17 +107,20 @@ Future<void> _initAudioService() async {
         debugPrint('AudioPlayerHandler builder called');
         return AudioPlayerHandler();
       },
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.example.ani_music.audio',
-        androidNotificationChannelName: 'RYUMA Music',
+      config: AudioServiceConfig(
+        androidNotificationChannelId: 'ryuma.music.audio.channel',
+        androidNotificationChannelName: 'RYUMA Music Player',
         androidNotificationChannelDescription:
-            'Music playback controls for RYUMA',
+            'Music playback controls for RYUMA Music Player',
         androidNotificationIcon: 'drawable/ic_notification',
         androidShowNotificationBadge: true,
-        androidStopForegroundOnPause: true,
-        notificationColor: Color(0xFF0A1929),
-        fastForwardInterval: Duration(seconds: 10),
-        rewindInterval: Duration(seconds: 10),
+        androidStopForegroundOnPause: false,
+        androidNotificationClickStartsActivity: true,
+        androidNotificationOngoing: true, // Keep notification persistent
+        notificationColor: const Color(0xFF0A1929),
+        fastForwardInterval: const Duration(seconds: 10),
+        rewindInterval: const Duration(seconds: 10),
+        androidResumeOnClick: true,
       ),
     );
 

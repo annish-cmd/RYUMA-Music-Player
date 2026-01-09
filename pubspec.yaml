@@ -17,6 +17,11 @@ dependencies:
 
   # Background audio and lock screen notification
   audio_service: ^0.18.15
+  
+
+  
+  # Audio session for audio focus management (required for lock screen controls)
+  audio_session: ^0.1.21
 
   # Music file access - using git version with namespace fix
   on_audio_query:

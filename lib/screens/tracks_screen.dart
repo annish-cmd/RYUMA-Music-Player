@@ -82,6 +82,7 @@ class _TracksScreenState extends State<TracksScreen>
     }
 
     if (newLetter != null && newLetter != _currentScrollLetter) {
+      // Use immutable update
       setState(() {
         _currentScrollLetter = newLetter;
       });
@@ -176,9 +177,11 @@ class _TracksScreenState extends State<TracksScreen>
       final data = prefs.getString(_favoritesKey);
       if (data != null) {
         final List<dynamic> ids = json.decode(data);
+        final loadedFavorites = ids.cast<int>();
+        
         if (mounted) {
           setState(() {
-            _favoriteIds = ids.cast<int>();
+            _favoriteIds = loadedFavorites;
           });
         }
       }
@@ -202,9 +205,11 @@ class _TracksScreenState extends State<TracksScreen>
       final data = prefs.getString(_recentlyPlayedKey);
       if (data != null) {
         final List<dynamic> ids = json.decode(data);
+        final loadedRecentlyPlayed = ids.cast<int>();
+        
         if (mounted) {
           setState(() {
-            _recentlyPlayedIds = ids.cast<int>();
+            _recentlyPlayedIds = loadedRecentlyPlayed;
           });
         }
       }
@@ -240,11 +245,13 @@ class _TracksScreenState extends State<TracksScreen>
       final data = prefs.getString(_playCountKey);
       if (data != null) {
         final Map<String, dynamic> counts = json.decode(data);
+        final loadedPlayCounts = counts.map(
+          (k, v) => MapEntry(int.parse(k), v as int),
+        );
+        
         if (mounted) {
           setState(() {
-            _playCountMap = counts.map(
-              (k, v) => MapEntry(int.parse(k), v as int),
-            );
+            _playCountMap = loadedPlayCounts;
           });
         }
       }
@@ -269,13 +276,19 @@ class _TracksScreenState extends State<TracksScreen>
   }
 
   void _toggleFavorite(int trackId) {
+    // Use immutable update to trigger rebuild only when needed
+    final newFavoriteIds = Set<int>.from(_favoriteIds);
+    if (newFavoriteIds.contains(trackId)) {
+      newFavoriteIds.remove(trackId);
+    } else {
+      newFavoriteIds.add(trackId);
+    }
+    
     setState(() {
-      if (_favoriteIds.contains(trackId)) {
-        _favoriteIds.remove(trackId);
-      } else {
-        _favoriteIds.add(trackId);
-      }
+      _favoriteIds = newFavoriteIds.toList();
     });
+    
+    // Save asynchronously without blocking UI
     _saveFavorites();
   }
 
@@ -288,9 +301,11 @@ class _TracksScreenState extends State<TracksScreen>
 
       if (playlistData != null) {
         final List<dynamic> jsonList = json.decode(playlistData);
+        final loadedPlaylists = jsonList.map((e) => PlaylistInfo.fromJson(e)).toList();
+        
         if (mounted) {
           setState(() {
-            _playlists = jsonList.map((e) => PlaylistInfo.fromJson(e)).toList();
+            _playlists = loadedPlaylists;
           });
         }
       }
@@ -369,6 +384,8 @@ class _TracksScreenState extends State<TracksScreen>
 
     _filteredTracks = sorted;
     _buildLetterIndex();
+    
+    // Only update state if needed
     setState(() {});
   }
 
@@ -423,19 +440,23 @@ class _TracksScreenState extends State<TracksScreen>
   }
 
   void _filterTracks(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredTracks = _tracks;
-      } else {
-        _filteredTracks = _tracks.where((track) {
-          final q = query.toLowerCase();
-          return track.title.toLowerCase().contains(q) ||
-              track.artist.toLowerCase().contains(q) ||
-              (track.album?.toLowerCase().contains(q) ?? false);
-        }).toList();
-      }
-      _applySorting();
-    });
+    List<Track> filtered;
+    
+    if (query.isEmpty) {
+      filtered = _tracks;
+    } else {
+      final q = query.toLowerCase();
+      filtered = _tracks.where((track) {
+        return track.title.toLowerCase().contains(q) ||
+            track.artist.toLowerCase().contains(q) ||
+            (track.album?.toLowerCase().contains(q) ?? false);
+      }).toList();
+    }
+    
+    _filteredTracks = filtered;
+    _applySorting();
+    
+    setState(() {});
   }
 
   Future<void> _refreshTracks() async {
@@ -1539,9 +1560,15 @@ class _TracksScreenState extends State<TracksScreen>
                   trackIds: initialTrack != null ? [initialTrack.id] : [],
                   createdAt: DateTime.now(),
                 );
+                // Use immutable update for playlists
+                final newPlaylists = List<PlaylistInfo>.from(_playlists);
+                newPlaylists.add(newPlaylist);
+                
                 setState(() {
-                  _playlists.add(newPlaylist);
+                  _playlists = newPlaylists;
                 });
+                
+                // Save asynchronously to not block UI
                 _savePlaylists();
                 Navigator.pop(context);
                 if (initialTrack != null) {
@@ -1678,13 +1705,22 @@ class _TracksScreenState extends State<TracksScreen>
                           : null,
                       onTap: () {
                         if (!alreadyAdded) {
+                          // Create new playlist with updated trackIds
+                          final updatedPlaylist = PlaylistInfo(
+                            name: playlist.name,
+                            trackIds: [...playlist.trackIds, track.id],
+                            createdAt: playlist.createdAt,
+                          );
+                                                  
+                          // Use immutable update for playlists
+                          final newPlaylists = List<PlaylistInfo>.from(_playlists);
+                          newPlaylists[index] = updatedPlaylist;
+                                                  
                           setState(() {
-                            _playlists[index] = PlaylistInfo(
-                              name: playlist.name,
-                              trackIds: [...playlist.trackIds, track.id],
-                              createdAt: playlist.createdAt,
-                            );
+                            _playlists = newPlaylists;
                           });
+                                                  
+                          // Save asynchronously to not block UI
                           _savePlaylists();
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -1756,9 +1792,15 @@ class _TracksScreenState extends State<TracksScreen>
                 style: TextStyle(color: appTheme.primaryColor),
               ),
               onTap: () {
+                // Use immutable update for playlists
+                final newPlaylists = List<PlaylistInfo>.from(_playlists);
+                newPlaylists.remove(playlist);
+                            
                 setState(() {
-                  _playlists.remove(playlist);
+                  _playlists = newPlaylists;
                 });
+                            
+                // Save asynchronously to not block UI
                 _savePlaylists();
                 Navigator.pop(context);
               },
@@ -1808,13 +1850,22 @@ class _TracksScreenState extends State<TracksScreen>
               if (controller.text.trim().isNotEmpty) {
                 final index = _playlists.indexOf(playlist);
                 if (index != -1) {
+                  // Create updated playlist
+                  final updatedPlaylist = PlaylistInfo(
+                    name: controller.text.trim(),
+                    trackIds: playlist.trackIds,
+                    createdAt: playlist.createdAt,
+                  );
+                  
+                  // Use immutable update for playlists
+                  final newPlaylists = List<PlaylistInfo>.from(_playlists);
+                  newPlaylists[index] = updatedPlaylist;
+                  
                   setState(() {
-                    _playlists[index] = PlaylistInfo(
-                      name: controller.text.trim(),
-                      trackIds: playlist.trackIds,
-                      createdAt: playlist.createdAt,
-                    );
+                    _playlists = newPlaylists;
                   });
+                  
+                  // Save asynchronously to not block UI
                   _savePlaylists();
                 }
                 Navigator.pop(context);
@@ -2310,9 +2361,15 @@ class _TracksScreenState extends State<TracksScreen>
                               await _audioPlayer.playTrack(track);
                             },
                             onFavoriteToggle: () {
+                              // Use immutable update for favorites
+                              final newFavoriteIds = Set<int>.from(_favoriteIds);
+                              newFavoriteIds.remove(track.id);
+                                                        
                               setState(() {
-                                _favoriteIds.remove(track.id);
+                                _favoriteIds = newFavoriteIds.toList();
                               });
+                                                        
+                              // Save asynchronously to not block UI
                               _saveFavorites();
                             },
                           );

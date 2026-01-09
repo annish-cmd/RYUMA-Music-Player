@@ -10,6 +10,12 @@
 # Flutter plugins
 -keep class com.ryanheise.** { *; }
 -keep class com.ryanheise.audio_session.** { *; }
+-keep class com.ryanheise.audioservice.** { *; }
+
+# Audio Service - Media Session and Notification
+-keep class android.support.v4.media.** { *; }
+-keep class androidx.media.** { *; }
+-keep class android.media.session.** { *; }
 
 # AndroidX
 -keep class androidx.** { *; }

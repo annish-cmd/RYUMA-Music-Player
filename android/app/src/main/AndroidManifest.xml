@@ -16,6 +16,12 @@
     <!-- For notification (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- For media session and lock screen controls -->
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+
     <application
         android:label="RYUMA"
         android:name="${applicationName}"
@@ -47,8 +53,12 @@
             tools:ignore="Instantiatable">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService"/>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
             </intent-filter>
         </service>
+            
+
 
         <!-- Media Button Receiver for headset/Bluetooth controls -->
         <receiver
@@ -59,6 +69,8 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>
             </intent-filter>
         </receiver>
+
+
 
         <!-- Link AudioService to MainActivity -->
         <meta-data
