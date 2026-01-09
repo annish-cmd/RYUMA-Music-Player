@@ -3,12 +3,18 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import 'package:rxdart/rxdart.dart';
 import '../models/track.dart';
 
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayer _player = AudioPlayer();
+
+  AudioPlayerHandler() {
+    debugPrint('AudioPlayerHandler: Constructor called');
+    _init();
+  }
 
   List<Track> _playlist = [];
   int _currentIndex = 0;
@@ -43,10 +49,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Duration? get duration => _player.duration;
   LoopMode get loopMode => _player.loopMode;
 
-  AudioPlayerHandler() {
-    debugPrint('AudioPlayerHandler: Constructor called');
-    _init();
-  }
+  // Initialize after construction
 
   Future<void> _init() async {
     debugPrint('AudioPlayerHandler: _init() starting...');
@@ -100,20 +103,29 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     
     final controls = <MediaControl>[];
     
-    // Add previous button if available
-    if (hasPrevious) {
-      controls.add(MediaControl.skipToPrevious);
-    }
-    
-    // Add play/pause button based on current state
+    // Add all buttons in a specific order for proper indexing
+    // Play/Pause is always first (index 0) for reliable toggle behavior
     controls.add(
       _player.playing ? MediaControl.pause : MediaControl.play,
     );
     
-    // Add next button if available
+    // Rewind button (index 1) - replaces the problematic white square area
+    controls.add(MediaControl.rewind);
+    
+    // Next button (index 2)
     if (hasNext) {
       controls.add(MediaControl.skipToNext);
     }
+    
+    // Previous button (index 3)
+    if (hasPrevious) {
+      controls.add(MediaControl.skipToPrevious);
+    }
+    
+    // Define compact action indices based on available buttons
+    List<int> compactIndices = [0]; // Always include play/pause
+    if (controls.length > 1) compactIndices.add(1); // Add rewind
+    if (controls.length > 2) compactIndices.add(2); // Add next if available
     
     playbackState.add(
       PlaybackState(
@@ -127,8 +139,9 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
           MediaAction.stop,
           MediaAction.skipToNext,
           MediaAction.skipToPrevious,
+          MediaAction.rewind,
         },
-        androidCompactActionIndices: controls.asMap().entries.take(3).map((e) => e.key).toList(),
+        androidCompactActionIndices: compactIndices,
         processingState: _getProcessingState(),
         playing: _player.playing,
         updatePosition: _player.position,
@@ -172,6 +185,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       }
     }
     
+    // Provide a fallback image if no album art is available
+    // Always ensure we have a valid artUri to prevent null errors
+    artUri = Uri.parse('asset:///RYUMA.jpg');
+    
     return MediaItem(
       id: track.id.toString(),
       title: track.title,
@@ -212,7 +229,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
     // Create audio sources
     final audioSources = _playlist
-        .map((track) => AudioSource.file(track.data!, tag: track.id.toString()))
+        .map((track) => AudioSource.file(track.data!, tag: _createMediaItem(track)))
         .toList();
 
     // Update the queue for audio_service
@@ -268,6 +285,8 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       mediaItem.add(item);
     }
     
+    // Small delay to ensure player state is updated before broadcasting
+    await Future.delayed(const Duration(milliseconds: 50));
     _broadcastState();
     debugPrint(
       'AudioPlayerHandler: play() completed, isPlaying: ${_player.playing}',
@@ -285,6 +304,8 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       mediaItem.add(item);
     }
     
+    // Small delay to ensure player state is updated before broadcasting
+    await Future.delayed(const Duration(milliseconds: 50));
     _broadcastState();
   }
 
@@ -496,5 +517,18 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     if (_player.playing) {
       _broadcastState();
     }
+  }
+
+  @override
+  Future<void> onTaskRemoved() async {
+    await stop();
+    await super.onTaskRemoved();
+  }
+  
+  @override
+  Future<void> rewind() async {
+    debugPrint('AudioPlayerHandler: rewind() called');
+    final newPosition = _player.position - const Duration(seconds: 10);
+    await seek(newPosition.isNegative ? Duration.zero : newPosition);
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
@@ -18,6 +19,14 @@ bool isAudioServiceInitialized = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🚨 CRITICAL: Initialize background service FIRST
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'ryuma.music.audio.channel',
+    androidNotificationChannelName: 'RYUMA Music Player',
+    androidNotificationOngoing: false,
+    androidStopForegroundOnPause: false,
+  );
 
   debugPrint('=== RYUMA Music Starting ===');
 

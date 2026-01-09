@@ -14,6 +14,7 @@ dependencies:
 
   # Audio playback
   just_audio: ^0.9.40
+  just_audio_background: ^0.0.1-beta.17    # ← ADD THIS
 
   # Background audio and lock screen notification
   audio_service: ^0.18.15
