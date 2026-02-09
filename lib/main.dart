@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:audio_service/audio_service.dart';
@@ -7,7 +6,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
-import 'screens/tracks_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/audio_handler.dart';
 import 'services/theme_service.dart';
 
@@ -16,6 +15,7 @@ late AudioPlayerHandler audioHandler;
 
 // Flag to track if audio service is properly initialized
 bool isAudioServiceInitialized = false;
+bool _isInitialized = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,29 +30,47 @@ Future<void> main() async {
 
   debugPrint('=== RYUMA Music Starting ===');
 
-  // Initialize theme service
-  await appTheme.initialize();
-  debugPrint('Theme service initialized');
-
-  // Set system UI style based on theme
-  _updateSystemUI();
-
-  // Set preferred orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // Request notification permission for Android 13+
-  await _requestNotificationPermission();
-
-  // Initialize audio session for proper audio focus handling
-  await _initAudioSession();
-
-  // Initialize audio handler with audio service for lock screen notification
-  await _initAudioService();
-
   runApp(const RyumaMusicApp());
+}
+
+/// Initialize all services - will be called from splash screen
+Future<void> _initializeApp() async {
+  if (_isInitialized) return;
+  
+  debugPrint('Starting app initialization...');
+  
+  try {
+    // Initialize theme service
+    await appTheme.initialize();
+    debugPrint('Theme service initialized');
+
+    // Set system UI style based on theme
+    _updateSystemUI();
+
+    // Set preferred orientations
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
+    // Request notification permission for Android 13+
+    await _requestNotificationPermission();
+
+    // Initialize audio session for proper audio focus handling
+    await _initAudioSession();
+
+    // Initialize audio handler with audio service for lock screen notification
+    await _initAudioService();
+    
+    _isInitialized = true;
+    debugPrint('=== App initialization COMPLETE ===');
+    
+  } catch (e, stackTrace) {
+    debugPrint('=== ERROR during app initialization ===');
+    debugPrint('Error: $e');
+    debugPrint('Stack trace: $stackTrace');
+    // Don't rethrow - let the app continue with basic functionality
+  }
 }
 
 /// Request notification permission for Android 13+
@@ -109,7 +127,7 @@ Future<void> _initAudioSession() async {
 /// Initialize AudioService for background playback and lock screen notification
 Future<void> _initAudioService() async {
   debugPrint('Initializing AudioService...');
-
+  
   try {
     audioHandler = await AudioService.init(
       builder: () {
@@ -189,7 +207,9 @@ class RyumaMusicApp extends StatelessWidget {
               child: child!,
             );
           },
-          home: const TracksScreen(),
+          home: SplashScreen(
+            onInitializationComplete: _initializeApp,
+          ),
         );
       },
     );

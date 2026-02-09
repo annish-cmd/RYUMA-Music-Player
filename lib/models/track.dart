@@ -86,10 +86,34 @@ class Track {
 
   // Format duration to readable string (e.g., "3:45")
   String get durationText {
-    if (duration == null) return '--:--';
-    final minutes = (duration! / 60000).floor();
-    final seconds = ((duration! % 60000) / 1000).floor();
-    return '${minutes.toString()}:${seconds.toString().padLeft(2, '0')}';
+    if (duration == null) {
+      // For tracks with null duration, show a placeholder
+      return '??:??';
+    }
+    
+    // Check for invalid duration values
+    if (duration! < 0) {
+      print('Warning: Track ${title} has negative duration: $duration ms');
+      return '--:--';
+    }
+    
+    // Handle very long durations (over 24 hours)
+    if (duration! > 24 * 60 * 60 * 1000) {
+      print('Warning: Track ${title} has extremely long duration: $duration ms');
+      // Still format it, but log the warning
+    }
+    
+    // Format the duration properly
+    final totalSeconds = duration! ~/ 1000;
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return '${hours.toString()}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } else {
+      return '${minutes.toString()}:${seconds.toString().padLeft(2, '0')}';
+    }
   }
 
   // Get file size in readable format

@@ -24,12 +24,8 @@ dependencies:
   # Audio session for audio focus management (required for lock screen controls)
   audio_session: ^0.1.21
 
-  # Music file access - using git version with namespace fix
-  on_audio_query:
-    git:
-      url: https://github.com/LucJosin/on_audio_query.git
-      ref: main
-      path: packages/on_audio_query
+  # Music file access
+  on_audio_query: ^2.6.5
 
   # Permissions
   permission_handler: ^11.3.0

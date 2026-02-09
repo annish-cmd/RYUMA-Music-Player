@@ -93,8 +93,8 @@ class MusicService {
     }
   }
 
-  // Minimum duration for music files (30 seconds in milliseconds)
-  static const int _minDurationMs = 30000;
+  // Minimum duration for music files (10 seconds in milliseconds) - less restrictive
+  static const int _minDurationMs = 10000;
 
   // Paths to exclude (system sounds, notifications, ringtones, alarms)
   static const List<String> _excludedPaths = [
@@ -118,18 +118,57 @@ class MusicService {
 
   // Check if a song should be excluded based on path
   bool _shouldExcludeSong(SongModel song) {
-    final path = song.data.toLowerCase();
+    final path = song.data?.toLowerCase() ?? '';
 
     // Exclude if path contains any excluded keywords
     for (final excluded in _excludedPaths) {
       if (path.contains(excluded.toLowerCase())) {
+        print('Excluding track due to path: ${song.title} (path contains: $excluded)');
         return true;
       }
     }
 
-    // Exclude very short audio files (likely sound effects)
-    if (song.duration != null && song.duration! < _minDurationMs) {
+    // Check duration validity
+    if (song.duration != null) {
+      // Minimum duration check (30 seconds)
+      if (song.duration! < _minDurationMs) {
+        print('Excluding short track: ${song.title} (${song.duration}ms < ${_minDurationMs}ms)');
+        return true;
+      }
+
+      // Maximum reasonable duration: 24 hours (86400000 ms)
+      const int maxDurationMs = 24 * 60 * 60 * 1000;
+      
+      if (song.duration! < 0) {
+        print('Excluding track with negative duration: ${song.title} (${song.duration}ms)');
+        return true;
+      }
+      
+      if (song.duration! > maxDurationMs) {
+        print('Warning: Track with very long duration: ${song.title} (${song.duration}ms > ${maxDurationMs}ms)');
+        // Don't exclude very long tracks, just log the warning
+      }
+    } else {
+      print('Warning: Track with null duration: ${song.title}');
+      // Don't exclude tracks with null duration, they might still be playable
+    }
+
+    // Check if title is empty or too generic
+    final title = song.title.trim();
+    if (title.isEmpty || 
+        title.toLowerCase() == 'unknown' ||
+        title.toLowerCase() == '<unknown>') {
+      print('Excluding track with invalid title: "$title"');
       return true;
+    }
+
+    // Check if artist is empty or too generic
+    final artist = (song.artist ?? '').trim();
+    if (artist.isEmpty || 
+        artist.toLowerCase() == 'unknown' ||
+        artist.toLowerCase() == '<unknown>') {
+      print('Warning: Track with generic artist: ${song.title} - "$artist"');
+      // Don't exclude, but log the warning
     }
 
     return false;
@@ -157,18 +196,79 @@ class MusicService {
 
       print('Found ${songs.length} total audio files');
 
-      // Filter out system sounds, notifications, ringtones, and short audio
-      final filteredSongs = songs
-          .where((song) => !_shouldExcludeSong(song))
+      // Log some statistics about durations
+      final validDurations = songs
+          .where((song) => song.duration != null)
+          .map((song) => song.duration!)
           .toList();
+      
+      if (validDurations.isNotEmpty) {
+        final minDuration = validDurations.reduce((a, b) => a < b ? a : b);
+        final maxDuration = validDurations.reduce((a, b) => a > b ? a : b);
+        final avgDuration = validDurations.reduce((a, b) => a + b) ~/ validDurations.length;
+        
+        print('Duration stats: Min=${minDuration}ms, Max=${maxDuration}ms, Avg=${avgDuration}ms');
+        print('Very long tracks (>1 hour): ${validDurations.where((d) => d > 3600000).length}');
+        
+        // Log some examples of very long tracks
+        final longTracks = songs
+            .where((song) => song.duration != null && song.duration! > 3600000)
+            .take(5)
+            .toList();
+        
+        if (longTracks.isNotEmpty) {
+          print('Sample long tracks:');
+          for (var song in longTracks) {
+            final minutes = (song.duration! / 60000).floor();
+            print('  - ${song.title}: ${minutes} minutes');
+          }
+        }
+      }
 
-      print('Filtered to ${filteredSongs.length} music tracks');
+      // Filter out system sounds, notifications, ringtones, and short audio
+      // But be more permissive with long tracks
+      final filteredSongs = <SongModel>[];
+      
+      for (final song in songs) {
+        if (!_shouldExcludeSong(song)) {
+          filteredSongs.add(song);
+        } else {
+          print('Excluded: ${song.title} - ${song.artist}');
+        }
+      }
+
+      print('Filtered to ${filteredSongs.length} music tracks (excluded ${songs.length - filteredSongs.length})');
 
       _allTracks = filteredSongs
           .map((song) => Track.fromSongModel(song))
           .toList();
 
       _lastLoadTime = DateTime.now();
+      
+      // Log information about the loaded tracks
+      if (_allTracks.isNotEmpty) {
+        final longTracks = _allTracks.where((track) => 
+            track.duration != null && track.duration! > 3600000).toList();
+        if (longTracks.isNotEmpty) {
+          print('Loaded ${longTracks.length} tracks longer than 1 hour:');
+          for (var track in longTracks.take(5)) {
+            print('  - ${track.title}: ${track.duration}ms (${(track.duration! / 1000 / 60).toStringAsFixed(1)} minutes)');
+          }
+        }
+        
+        // Check for tracks with null duration that were included
+        final nullDurationTracks = _allTracks.where((track) => track.duration == null).toList();
+        if (nullDurationTracks.isNotEmpty) {
+          print('Loaded ${nullDurationTracks.length} tracks with null duration:');
+          for (var track in nullDurationTracks.take(5)) {
+            print('  - ${track.title} - ${track.artist}');
+          }
+        }
+      } else {
+        print('WARNING: No tracks loaded after filtering!');
+        print('This might indicate overly restrictive filtering rules.');
+      }
+
       return _allTracks;
     } catch (e) {
       print('Error loading tracks: $e');

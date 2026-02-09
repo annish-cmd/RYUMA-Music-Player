@@ -363,11 +363,10 @@ packages:
   on_audio_query:
     dependency: "direct main"
     description:
-      path: "packages/on_audio_query"
-      ref: main
-      resolved-ref: "90e9ab8d724fe8553920c3f14efa5459041d4989"
-      url: "https://github.com/LucJosin/on_audio_query.git"
-    source: git
+      name: on_audio_query
+      sha256: "28d7a247f8a0580b5d1befba15c8d8fd7e1cf3cd8e0449d54a66fc2ef27adf10"
+      url: "https://pub.dev"
+    source: hosted
     version: "2.9.0"
   on_audio_query_android:
     dependency: transitive
